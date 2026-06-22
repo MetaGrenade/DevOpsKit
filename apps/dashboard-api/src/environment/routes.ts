@@ -37,6 +37,12 @@ async function requireActiveWorkspace() {
   return active;
 }
 
+function environmentErrorReply(error: unknown, reply: import("fastify").FastifyReply) {
+  const message = error instanceof Error ? error.message : String(error);
+  const statusCode = message.includes("not found") ? 404 : 400;
+  return reply.status(statusCode).send({ error: statusCode === 404 ? "not_found" : "invalid_input", message });
+}
+
 export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/v1/environment/profiles", async (_request, reply) => {
     const active = await requireActiveWorkspace();
@@ -46,6 +52,13 @@ export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<v
 
     const registry = await loadEnvironmentRegistry(active.directory);
     const profiles = await listEnvironmentProfiles(active.directory);
+    if (profiles.length === 0) {
+      return reply.status(404).send({
+        error: "not_found",
+        message: "No environment profiles yet. Initialize defaults to get started.",
+      });
+    }
+
     return { defaultProfileId: registry.defaultProfileId, profiles };
   });
 
@@ -86,10 +99,14 @@ export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<v
       return reply.status(400).send({ error: "invalid_input", message: parsed.error.message });
     }
 
-    const ref = parsed.data.profileId ?? parsed.data.env;
-    const profile = await resolveProfileForGeneration(active.directory, ref);
-    const result = await generateServerCfg(active.directory, active.workspace, profile);
-    return { status: "generated", profileId: profile.id, ...result };
+    try {
+      const ref = parsed.data.profileId ?? parsed.data.env;
+      const profile = await resolveProfileForGeneration(active.directory, ref);
+      const result = await generateServerCfg(active.directory, active.workspace, profile);
+      return { status: "generated", profileId: profile.id, ...result };
+    } catch (error) {
+      return environmentErrorReply(error, reply);
+    }
   });
 
   app.post("/api/v1/environment/generate-recipe", async (request, reply) => {
@@ -103,10 +120,14 @@ export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<v
       return reply.status(400).send({ error: "invalid_input", message: parsed.error.message });
     }
 
-    const ref = parsed.data.profileId ?? parsed.data.env;
-    const profile = await resolveProfileForGeneration(active.directory, ref);
-    const result = await generateTxAdminRecipe(active.directory, active.workspace, profile);
-    return { status: "generated", profileId: profile.id, ...result };
+    try {
+      const ref = parsed.data.profileId ?? parsed.data.env;
+      const profile = await resolveProfileForGeneration(active.directory, ref);
+      const result = await generateTxAdminRecipe(active.directory, active.workspace, profile);
+      return { status: "generated", profileId: profile.id, ...result };
+    } catch (error) {
+      return environmentErrorReply(error, reply);
+    }
   });
 
   app.post("/api/v1/environment/validate", async (request, reply) => {
@@ -120,11 +141,15 @@ export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<v
       return reply.status(400).send({ error: "invalid_input", message: parsed.error.message });
     }
 
-    const ref = parsed.data.profileId ?? parsed.data.env ?? "production";
-    const profile = await resolveProfileForGeneration(active.directory, ref);
-    const report = validateEnvironmentProfile(active.name, profile);
-    const reportPath = await saveEnvironmentValidationReport(active.directory, report);
-    return { status: report.passed ? "passed" : "failed", report, reportPath };
+    try {
+      const ref = parsed.data.profileId ?? parsed.data.env ?? "production";
+      const profile = await resolveProfileForGeneration(active.directory, ref);
+      const report = validateEnvironmentProfile(active.name, profile);
+      const reportPath = await saveEnvironmentValidationReport(active.directory, report);
+      return { status: report.passed ? "passed" : "failed", report, reportPath };
+    } catch (error) {
+      return environmentErrorReply(error, reply);
+    }
   });
 
   app.post("/api/v1/environment/diff", async (request, reply) => {
@@ -138,15 +163,19 @@ export async function registerEnvironmentRoutes(app: FastifyInstance): Promise<v
       return reply.status(400).send({ error: "invalid_input", message: parsed.error.message });
     }
 
-    const report = await buildEnvironmentDiffReport(
-      active.directory,
-      active.workspace,
-      parsed.data.from,
-      parsed.data.to,
-    );
-    const reportPath = await saveEnvironmentDiffReport(active.directory, report);
-    const markdown = renderEnvironmentDiffMarkdown(report);
-    return { status: "compared", report, reportPath, markdown };
+    try {
+      const report = await buildEnvironmentDiffReport(
+        active.directory,
+        active.workspace,
+        parsed.data.from,
+        parsed.data.to,
+      );
+      const reportPath = await saveEnvironmentDiffReport(active.directory, report);
+      const markdown = renderEnvironmentDiffMarkdown(report);
+      return { status: "compared", report, reportPath, markdown };
+    } catch (error) {
+      return environmentErrorReply(error, reply);
+    }
   });
 
   app.get("/api/v1/reports/environment-validation", async (_request, reply) => {

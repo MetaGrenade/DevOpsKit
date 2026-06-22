@@ -16,9 +16,12 @@ import {
   createWorkspaceRecord,
   detectFrameworkProfile,
   detectServerArtifactBuild,
+  initEnvironmentProfiles,
   loadWorkspaceConfig,
+  resolveEnvironmentProfilesPath,
   updateWorkspaceFrameworkProfile,
 } from "@fdt/core";
+import { existsSync } from "node:fs";
 import { loadWorkspaceRegistry, saveWorkspaceRegistry } from "./registry-store.js";
 import { getMonorepoRoot, resolveFromMonorepoRoot } from "../monorepo-root.js";
 import { clearAllReportCaches } from "../reports/store.js";
@@ -82,6 +85,14 @@ async function ensureSampleWorkspace(registry: WorkspaceRegistry): Promise<Works
       ...registry,
       activeWorkspaceId: registry.workspaces[0]!.id,
     };
+  }
+
+  const profilesPath = resolveEnvironmentProfilesPath(sampleDirectory);
+  if (!existsSync(profilesPath)) {
+    const discovery = await loadWorkspaceConfig({ workspaceRoot: sampleDirectory });
+    if (discovery.status === "found") {
+      await initEnvironmentProfiles(sampleDirectory, discovery.workspace);
+    }
   }
 
   return registry;

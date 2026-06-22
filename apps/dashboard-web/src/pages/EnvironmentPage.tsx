@@ -46,6 +46,39 @@ interface EnvironmentExportEntry {
   recipeExists: boolean;
 }
 
+async function readApiError(res: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await res.json()) as { message?: string };
+    return payload.message ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function syncProfileSelection(
+  profiles: EnvironmentProfile[],
+  selectedEnv: string,
+  diffFrom: string,
+  diffTo: string,
+): { selectedEnv: string; diffFrom: string; diffTo: string } {
+  if (profiles.length === 0) {
+    return { selectedEnv, diffFrom, diffTo };
+  }
+
+  const ids = profiles.map((profile) => profile.id);
+  const pick = (value: string, fallbackIndex: number) =>
+    ids.includes(value) ? value : ids[fallbackIndex] ?? ids[0]!;
+
+  const nextSelected = pick(selectedEnv, Math.min(1, ids.length - 1));
+  const nextFrom = pick(diffFrom, Math.min(1, ids.length - 1));
+  let nextTo = pick(diffTo, ids.length - 1);
+  if (nextTo === nextFrom && ids.length > 1) {
+    nextTo = ids.find((id) => id !== nextFrom) ?? nextTo;
+  }
+
+  return { selectedEnv: nextSelected, diffFrom: nextFrom, diffTo: nextTo };
+}
+
 export default function EnvironmentPage() {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [profiles, setProfiles] = useState<EnvironmentProfile[]>([]);
@@ -96,10 +129,16 @@ export default function EnvironmentPage() {
     }
 
     const profilesPayload = (await profilesRes.json()) as { profiles: EnvironmentProfile[] };
+    const nextSelection = syncProfileSelection(
+      profilesPayload.profiles,
+      selectedEnv,
+      diffFrom,
+      diffTo,
+    );
     setProfiles(profilesPayload.profiles);
-    if (profilesPayload.profiles.length > 0 && !profilesPayload.profiles.some((p) => p.id === selectedEnv)) {
-      setSelectedEnv(profilesPayload.profiles[0]!.id);
-    }
+    setSelectedEnv(nextSelection.selectedEnv);
+    setDiffFrom(nextSelection.diffFrom);
+    setDiffTo(nextSelection.diffTo);
 
     const exportsRes = await fetch("/api/v1/environment/exports");
     if (exportsRes.ok) {
@@ -119,11 +158,11 @@ export default function EnvironmentPage() {
     setMessage(null);
     try {
       const res = await fetch("/api/v1/environment/init", { method: "POST" });
-      if (!res.ok) throw new Error("Init failed");
+      if (!res.ok) throw new Error(await readApiError(res, "Init failed"));
       await loadData();
       setMessage("Initialized local, dev, staging, and production profiles.");
-    } catch {
-      setMessage("Failed to initialize environment profiles.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to initialize environment profiles.");
     } finally {
       setBusy(false);
     }
@@ -138,11 +177,11 @@ export default function EnvironmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ env: selectedEnv }),
       });
-      if (!res.ok) throw new Error("Generate cfg failed");
+      if (!res.ok) throw new Error(await readApiError(res, "Generate cfg failed"));
       await loadData();
       setMessage(`Generated server.cfg for ${selectedEnv}.`);
-    } catch {
-      setMessage("Failed to generate server.cfg.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to generate server.cfg.");
     } finally {
       setBusy(false);
     }
@@ -157,11 +196,11 @@ export default function EnvironmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ env: selectedEnv }),
       });
-      if (!res.ok) throw new Error("Generate recipe failed");
+      if (!res.ok) throw new Error(await readApiError(res, "Generate recipe failed"));
       await loadData();
       setMessage(`Generated txAdmin recipe for ${selectedEnv}.`);
-    } catch {
-      setMessage("Failed to generate txAdmin recipe.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to generate txAdmin recipe.");
     } finally {
       setBusy(false);
     }
@@ -176,12 +215,12 @@ export default function EnvironmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ env: selectedEnv }),
       });
-      if (!res.ok) throw new Error("Validate failed");
+      if (!res.ok) throw new Error(await readApiError(res, "Validate failed"));
       const payload = (await res.json()) as { report: EnvironmentValidationReport };
       setValidation(payload.report);
       setMessage(payload.report.passed ? "Validation passed." : "Validation failed — review findings.");
-    } catch {
-      setMessage("Failed to validate environment profile.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to validate environment profile.");
     } finally {
       setBusy(false);
     }
@@ -196,12 +235,12 @@ export default function EnvironmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ from: diffFrom, to: diffTo }),
       });
-      if (!res.ok) throw new Error("Diff failed");
+      if (!res.ok) throw new Error(await readApiError(res, "Diff failed"));
       const payload = (await res.json()) as { report: EnvironmentDiffReport };
       setDiff(payload.report);
       setMessage(`Compared ${diffFrom} → ${diffTo}.`);
-    } catch {
-      setMessage("Failed to diff environment profiles.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to diff environment profiles.");
     } finally {
       setBusy(false);
     }
@@ -269,7 +308,7 @@ export default function EnvironmentPage() {
               <div className="mt-6 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || profiles.length === 0}
                   onClick={() => void runGenerateCfg()}
                   className="rounded-lg bg-cyan-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
                 >
@@ -277,7 +316,7 @@ export default function EnvironmentPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || profiles.length === 0}
                   onClick={() => void runGenerateRecipe()}
                   className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
                 >
@@ -285,7 +324,7 @@ export default function EnvironmentPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || profiles.length === 0}
                   onClick={() => void runValidate()}
                   className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-200 disabled:opacity-50"
                 >
@@ -328,7 +367,7 @@ export default function EnvironmentPage() {
               </div>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || profiles.length < 2}
                 onClick={() => void runDiff()}
                 className="mt-4 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-200 disabled:opacity-50"
               >

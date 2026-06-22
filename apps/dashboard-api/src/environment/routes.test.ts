@@ -78,4 +78,61 @@ describe("environment routes", () => {
       await rm(registryDir, { recursive: true, force: true });
     }
   });
+
+  it("returns 404 when profiles are missing and generate is requested", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "fdt-api-env-empty-"));
+    const serverRoot = path.join(tempRoot, "server");
+    await mkdir(path.join(serverRoot, "resources", "demo"), { recursive: true });
+    await writeFile(path.join(serverRoot, "resources", "demo", "fxmanifest.lua"), "fx_version 'cerulean'\n", "utf8");
+    await writeFile(path.join(serverRoot, "server.cfg"), "ensure demo\n", "utf8");
+    await writeFile(
+      path.join(tempRoot, "fdt.workspace.json"),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          name: "Empty Env Server",
+          serverRoot: "./server",
+          resourcesRoot: "./server/resources",
+          serverCfg: "./server/server.cfg",
+          artifactOutput: "./.fdt/exports",
+        },
+        null,
+        2,
+      )}\n`,
+      "utf8",
+    );
+
+    const registryDir = await mkdtemp(path.join(os.tmpdir(), "fdt-api-env-empty-registry-"));
+    process.env.FDT_DATA_DIR = registryDir;
+
+    await saveWorkspaceRegistry({ schemaVersion: 1, activeWorkspaceId: null, workspaces: [] });
+    const app = await buildApp();
+
+    try {
+      const createWorkspaceResponse = await app.inject({
+        method: "POST",
+        url: "/api/v1/workspaces/register",
+        payload: {
+          workspaceDirectory: tempRoot,
+        },
+      });
+      expect(createWorkspaceResponse.statusCode).toBe(200);
+
+      const profilesResponse = await app.inject({ method: "GET", url: "/api/v1/environment/profiles" });
+      expect(profilesResponse.statusCode).toBe(404);
+
+      const cfgResponse = await app.inject({
+        method: "POST",
+        url: "/api/v1/environment/generate-cfg",
+        payload: { env: "dev" },
+      });
+      expect(cfgResponse.statusCode).toBe(404);
+      expect(cfgResponse.json()).toMatchObject({
+        message: expect.stringContaining("Environment profile not found"),
+      });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+      await rm(registryDir, { recursive: true, force: true });
+    }
+  });
 });
