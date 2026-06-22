@@ -1,6 +1,6 @@
 # fdt_devtools
 
-Permission-protected in-game dev overlay for the FiveM DevOps Toolkit.
+Permission-protected in-game dev overlay for the [FiveM DevOps Toolkit](https://github.com/MetaGrenade/DevOpsKit).
 
 ## Install
 

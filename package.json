@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "private": true,
   "description": "Framework-agnostic development operations suite for FiveM server development",
+  "homepage": "https://github.com/MetaGrenade/DevOpsKit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MetaGrenade/DevOpsKit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MetaGrenade/DevOpsKit/issues"
+  },
   "license": "(AGPL-3.0-or-later OR SEE LICENSE IN LICENSE)",
   "engines": {
     "node": ">=20"

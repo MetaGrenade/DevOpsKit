@@ -2,6 +2,8 @@
 
 Thank you for contributing to FiveM DevOps Toolkit. This guide covers local development for humans; AI agents should also read [AI Agent Guide](./ai-agent-guide.md).
 
+**Repository:** [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit) — open issues and pull requests there.
+
 ## Prerequisites
 
 - Node.js 20+
@@ -105,7 +107,7 @@ Include:
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the project’s **[AGPL-3.0-or-later](../LICENSE)** (see also [Commercial License](../COMMERCIAL-LICENSE.md) for the dual-licensing model). Do not submit material you cannot license on those terms.
+By contributing to [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit), you agree that your contributions are licensed under the project’s **[AGPL-3.0-or-later](../LICENSE)** (see also [Commercial License](../COMMERCIAL-LICENSE.md) for the dual-licensing model). Do not submit material you cannot license on those terms.
 
 ## Related
 

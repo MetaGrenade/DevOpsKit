@@ -1,5 +1,7 @@
 # FiveM DevOps Toolkit
 
+**Repository:** [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit)
+
 Framework-agnostic development operations suite for GTA V FiveM server development.
 
 FiveM DevOps Toolkit sits around your existing authoring tools (Blender/Sollumz, CodeWalker, OpenIV, txAdmin, QBCore, ESX, ox resources) as a workflow layer for validation, packaging, export, QA, and release automation.
@@ -97,6 +99,6 @@ pnpm fdt validate resources --workspace E:/FiveMServers/my-rp
 FiveM DevOps Toolkit is **dual-licensed**:
 
 - **[AGPL-3.0-or-later](./LICENSE)** — free to use, modify, and share under copyleft terms (including obligations when offering modified versions as a network service).
-- **[Commercial license](./COMMERCIAL-LICENSE.md)** — for organizations that need to use or distribute FDT without AGPL copyleft requirements. Contact the maintainers for terms.
+- **[Commercial license](./COMMERCIAL-LICENSE.md)** — for organizations that need to use or distribute FDT without AGPL copyleft requirements. Request terms via [GitHub](https://github.com/MetaGrenade/DevOpsKit) or the contact in that file.
 
 Unless you have a separate commercial agreement, the AGPL applies.

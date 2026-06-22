@@ -47,7 +47,7 @@ Specific restrictions are set out in each signed agreement.
 
 Contact the project maintainers to request terms:
 
-- **GitHub:** open a discussion or issue on the official FiveM DevOps Toolkit repository (label: `commercial-license`)
+- **GitHub:** [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit) — open a discussion or issue (label: `commercial-license`)
 - **Email:** contact@deadpixellabs.com
 
 Include:
@@ -58,7 +58,7 @@ Include:
 
 ## Contributions
 
-Contributions to the public repository are accepted under the **AGPL-3.0-or-later**, unless a separate Contributor License Agreement (CLA) is in place. By contributing, you agree that your contributions may be licensed to commercial licensees as part of the dual-licensing model.
+Contributions to the public repository at [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit) are accepted under the **AGPL-3.0-or-later**, unless a separate Contributor License Agreement (CLA) is in place. By contributing, you agree that your contributions may be licensed to commercial licensees as part of the dual-licensing model.
 
 ## Disclaimer
 

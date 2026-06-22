@@ -3,6 +3,8 @@ FiveM DevOps Toolkit - Dual License
 
 Copyright (c) 2026 FiveM DevOps Toolkit contributors
 
+Source: https://github.com/MetaGrenade/DevOpsKit
+
 This program is dual-licensed. You may use it under ONE of the following:
 
   1. GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)
@@ -10,7 +12,7 @@ This program is dual-licensed. You may use it under ONE of the following:
 
   2. Commercial License
      See COMMERCIAL-LICENSE.md in this repository.
-     Contact the maintainers for a separate written agreement.
+     https://github.com/MetaGrenade/DevOpsKit — contact the maintainers for a separate written agreement.
 
 If you have not obtained a commercial license, the AGPL applies to your use,
 modification, and distribution of this software.

@@ -1,9 +1,13 @@
+-- FiveM DevOps Toolkit (FDT)
+-- Source: https://github.com/MetaGrenade/DevOpsKit
+-- License: AGPL-3.0-or-later OR commercial — see LICENSE / COMMERCIAL-LICENSE.md in repository
+
 fx_version 'cerulean'
 game 'gta5'
 
 name 'fdt_devtools'
-author 'FiveM DevOps Toolkit'
-description 'Permission-protected in-game dev overlay for coordinates and zone export'
+author 'FiveM DevOps Toolkit (https://github.com/MetaGrenade/DevOpsKit)'
+description 'Permission-protected in-game dev overlay for coordinates and zone export — part of FiveM DevOps Toolkit'
 version '0.1.0'
 
 lua54 'yes'
