@@ -1,4 +1,3 @@
-import type { FdtDomainModel } from "@fdt/schemas";
 import type { AdapterExportOptions, FdtAdapter } from "./types.js";
 import { buildOxInventoryExport } from "./ox-inventory-render.js";
 import { renderQboxClothingCatalogLua } from "./clothing-render.js";

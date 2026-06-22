@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import type { Finding, Resource, ResourceDoctorReport, Workspace } from "@fdt/schemas";
+import type { Finding, ResourceDoctorReport, Workspace } from "@fdt/schemas";
 import { detectServerArtifactBuild } from "@fdt/core";
 import { allStartedResources, scanResources, type ScanResourcesResult } from "@fdt/scanner";
 import { validateManifestChecks } from "./manifest-checks.js";

@@ -46,5 +46,5 @@ export function isExternalResourceReference(value: string): boolean {
 }
 
 export function isGlobPattern(value: string): boolean {
-  return /[*?\[\]{}]/.test(value);
+  return /[*?[\]{}]/.test(value);
 }

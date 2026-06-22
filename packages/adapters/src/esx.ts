@@ -1,4 +1,4 @@
-import type { Item, FdtDomainModel } from "@fdt/schemas";
+import type { Item } from "@fdt/schemas";
 import type { AdapterExportOptions, FdtAdapter } from "./types.js";
 import { renderEsxClothingCatalogJson } from "./clothing-render.js";
 import {

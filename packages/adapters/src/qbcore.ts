@@ -1,4 +1,4 @@
-import type { Item, FdtDomainModel } from "@fdt/schemas";
+import type { Item } from "@fdt/schemas";
 import type { AdapterExportOptions, FdtAdapter } from "./types.js";
 import { luaBool, luaString } from "./lua-utils.js";
 import { renderQbClothingCatalogLua } from "./clothing-render.js";

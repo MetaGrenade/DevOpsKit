@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ZoneCoordSchema } from "./zone.js";
 
 export const VehicleFilesSchema = z.object({
   yft: z.array(z.string()).default([]),

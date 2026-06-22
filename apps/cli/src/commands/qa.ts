@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Command } from "commander";
-import { loadQaScenarioRegistry, FDT_QA_VALIDATION_REPORT, FDT_REPORTS_DIR } from "@fdt/core";
+import { loadQaScenarioRegistry, FDT_QA_VALIDATION_REPORT } from "@fdt/core";
 import { QaValidationReportSchema } from "@fdt/schemas";
 import { validateQaScenarios } from "@fdt/validators";
 import { getGlobalOptions } from "../lib/global-options.js";

@@ -8,7 +8,6 @@ import {
   FDT_ECONOMY_SIMULATION_REPORT,
   runEconomySimulation,
   saveEconomySimulationReport,
-  writeEconomyMarkdownReport,
 } from "@fdt/core";
 import { getGlobalOptions } from "../lib/global-options.js";
 import { requireWorkspace } from "../lib/workspace.js";

@@ -13,7 +13,7 @@ export interface RefreshClothingPacksOptions {
 export async function refreshClothingPacksForCi(
   options: RefreshClothingPacksOptions,
 ): Promise<ClothingPack[]> {
-  let packs = await listClothingPacks(options.workspaceRoot);
+  const packs = await listClothingPacks(options.workspaceRoot);
 
   if (options.discover !== false) {
     const resourcesRoot = path.resolve(options.workspaceRoot, options.workspace.resourcesRoot);

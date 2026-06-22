@@ -92,7 +92,7 @@ function drawableBaseName(fileName: string): string {
 }
 
 function extractNumericId(input: string): number | undefined {
-  const match = input.match(/(?:^|[_\^])(\d{1,4})(?:\.|$)/);
+  const match = input.match(/(?:^|[_^])(\d{1,4})(?:\.|$)/);
   return match ? Number(match[1]) : undefined;
 }
 

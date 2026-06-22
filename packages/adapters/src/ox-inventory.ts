@@ -1,4 +1,3 @@
-import type { FdtDomainModel } from "@fdt/schemas";
 import type { AdapterExportOptions, FdtAdapter } from "./types.js";
 import {
   renderOxInventoryCraftingLua,

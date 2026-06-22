@@ -22,10 +22,6 @@ import {
 const MAP_EXTENSIONS = new Set(["ymap", "ytyp", "ybn", "ydr", "ytd"]);
 const VEHICLE_META_CANDIDATES = ["vehicles.meta", "data/vehicles.meta", "stream/vehicles.meta"];
 
-function normalizePath(value: string): string {
-  return value.replace(/\\/g, "/");
-}
-
 export function isLikelyMapResource(resourceName: string): boolean {
   const normalized = resourceName.toLowerCase();
   return /(?:^|[_-])(map|mlo|interior|ipl)(?:[_-]|$)/.test(normalized)

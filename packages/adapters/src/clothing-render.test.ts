@@ -3,11 +3,9 @@ import type { FdtDomainModel } from "@fdt/schemas";
 import {
   buildClothingShopEntries,
   renderClothingShopJson,
-  renderEsxClothingCatalogJson,
   renderQbClothingCatalogLua,
 } from "./clothing-render.js";
 import { customJsonAdapter } from "./custom-json.js";
-import { esxAdapter } from "./esx.js";
 import { qbcoreAdapter } from "./qbcore.js";
 import { qboxAdapter } from "./qbox.js";
 
