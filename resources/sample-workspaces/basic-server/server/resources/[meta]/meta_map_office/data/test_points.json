@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "mapId": "map_office",
+  "testPoints": [
+    {
+      "id": "office_roof",
+      "label": "Office roof QA point",
+      "type": "teleport",
+      "coords": {
+        "x": -75.2,
+        "y": -818.4,
+        "z": 326.2,
+        "h": 180
+      }
+    }
+  ]
+}

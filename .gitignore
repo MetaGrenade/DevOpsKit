@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.turbo/
+.fdt/
+AI/
+*.log
+.env
+.env.local
+coverage/
+.DS_Store
+Thumbs.db

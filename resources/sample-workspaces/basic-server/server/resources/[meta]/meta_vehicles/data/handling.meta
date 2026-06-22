@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CHandlingDataMgr>
+  <HandlingData>
+    <Item>
+      <handlingName>meta_cvpi</handlingName>
+      <fMass value="1800.000000" />
+      <fInitialDriveMaxFlatVel value="145.000000" />
+      <fBrakeForce value="0.900000" />
+      <fTractionCurveMax value="2.450000" />
+    </Item>
+    <Item>
+      <handlingName>police2</handlingName>
+      <fMass value="1600.000000" />
+      <fInitialDriveMaxFlatVel value="150.000000" />
+      <fBrakeForce value="1.100000" />
+      <fTractionCurveMax value="2.300000" />
+    </Item>
+  </HandlingData>
+</CHandlingDataMgr>

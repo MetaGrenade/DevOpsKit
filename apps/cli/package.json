@@ -1,0 +1,29 @@
+{
+  "name": "@fdt/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "fdt": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@fdt/adapters": "workspace:*",
+    "@fdt/core": "workspace:*",
+    "@fdt/schemas": "workspace:*",
+    "@fdt/scanner": "workspace:*",
+    "@fdt/validators": "workspace:*",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
+  }
+}

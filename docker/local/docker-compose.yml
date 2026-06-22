@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fdt-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fdt
+      POSTGRES_PASSWORD: fdt
+      POSTGRES_DB: fdt
+    ports:
+      - "5432:5432"
+    volumes:
+      - fdt-postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: fdt-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - fdt-redis-data:/data
+
+volumes:
+  fdt-postgres-data:
+  fdt-redis-data:

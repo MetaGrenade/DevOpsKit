@@ -1,0 +1,51 @@
+name: FDT Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test
+
+      - name: Run FDT CI pipeline on sample workspace
+        run: >
+          pnpm fdt ci run
+          --workspace resources/sample-workspaces/basic-server
+          --ci
+          --gates validate,security,qa
+          --report-only validate
+
+      - name: Upload CI pipeline report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdt-ci-pipeline
+          path: resources/sample-workspaces/basic-server/.fdt/reports/ci-pipeline.json
+
+      - name: Upload security SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: resources/sample-workspaces/basic-server/.fdt/reports/security-audit.sarif.json
+          category: fdt-security

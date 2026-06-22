@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-21T00:00:00.000Z",
+  "scenarios": [
+    {
+      "id": "spawn-smoke-test",
+      "label": "Spawn Smoke Test",
+      "category": "core",
+      "preconditions": ["Test character can join the server"],
+      "steps": [
+        {
+          "id": "spawn",
+          "type": "assertion",
+          "label": "Player spawns without script errors"
+        },
+        {
+          "id": "move",
+          "type": "manual",
+          "label": "Walk around for 30 seconds"
+        }
+      ],
+      "expectedResults": ["No F8 script errors", "Character model loads correctly"]
+    }
+  ]
+}

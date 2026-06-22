@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "mapId": "map_office",
+  "entrances": [
+    {
+      "x": -75.2,
+      "y": -818.4,
+      "z": 326.2,
+      "h": 180
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CVehicleModelInfo__InitDataList>
+  <residentTxd>vehshare</residentTxd>
+  <InitDatas>
+    <Item>
+      <modelName>meta_cvpi</modelName>
+      <txdName>meta_cvpi</txdName>
+      <handlingId>meta_cvpi</handlingId>
+      <gameName>CVPI</gameName>
+      <vehicleMakeName>Vapid</vehicleMakeName>
+      <vehicleClass>VC_EMERGENCY</vehicleClass>
+    </Item>
+  </InitDatas>
+</CVehicleModelInfo__InitDataList>

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "Sample FiveM Server",
+  "serverRoot": "./server",
+  "resourcesRoot": "./server/resources",
+  "serverCfg": "./server/server.cfg",
+  "artifactOutput": "./.fdt/exports",
+  "frameworkTargets": ["custom"],
+  "rulesets": ["baseline"],
+  "resourceIgnore": ["**/.git/**", "**/node_modules/**", "**/dist/**", "**/cache/**"]
+}
