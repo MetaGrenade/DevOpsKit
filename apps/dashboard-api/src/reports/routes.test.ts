@@ -1,10 +1,10 @@
 import path from "node:path";
-import { mkdtemp, rm } from "node:fs/promises";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it, afterEach } from "vitest";
+import { beforeAll, describe, expect, it, afterEach } from "vitest";
 import { createWorkspaceRecord } from "@fdt/core";
-import { ResourceDoctorReportSchema } from "@fdt/schemas";
+import { ResourceDoctorReportSchema, type ResourceDoctorReport } from "@fdt/schemas";
 import { buildApp } from "../app.js";
 import { findLatestResourceDoctorReport, resolveResourceDoctorReport } from "./loader.js";
 import { clearAllReportCaches, clearResourceDoctorReport, setResourceDoctorReport } from "./store.js";
@@ -12,6 +12,51 @@ import { saveWorkspaceRegistry } from "../workspaces/registry-store.js";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const SAMPLE_WORKSPACE = path.join(REPO_ROOT, "resources/sample-workspaces/basic-server");
+const SAMPLE_RESOURCE_DOCTOR_REPORT = path.join(
+  SAMPLE_WORKSPACE,
+  ".fdt",
+  "reports",
+  "resource-doctor.json",
+);
+
+function createSampleResourceDoctorReport(workspaceRoot: string): ResourceDoctorReport {
+  return ResourceDoctorReportSchema.parse({
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    workspaceName: "Sample FiveM Server",
+    workspaceRoot,
+    summary: {
+      resourcesScanned: 9,
+      errors: 0,
+      warnings: 0,
+      info: 0,
+      passed: 9,
+    },
+    resources: [],
+    serverCfg: { path: "server/server.cfg", started: [], ensured: [] },
+    findings: [],
+  });
+}
+
+async function ensureSampleResourceDoctorReport(): Promise<void> {
+  try {
+    await access(SAMPLE_RESOURCE_DOCTOR_REPORT);
+    return;
+  } catch {
+    // Generated reports live under .fdt/, which is gitignored — create a fixture on CI.
+  }
+
+  await mkdir(path.dirname(SAMPLE_RESOURCE_DOCTOR_REPORT), { recursive: true });
+  await writeFile(
+    SAMPLE_RESOURCE_DOCTOR_REPORT,
+    `${JSON.stringify(createSampleResourceDoctorReport(SAMPLE_WORKSPACE), null, 2)}\n`,
+    "utf8",
+  );
+}
+
+beforeAll(async () => {
+  await ensureSampleResourceDoctorReport();
+});
 
 describe("report loader", () => {
   it("finds the sample workspace report on disk", async () => {
