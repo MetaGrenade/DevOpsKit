@@ -22,12 +22,6 @@ interface StateBagSnapshot {
   watchedKeys: string[];
 }
 
-interface ExportResult {
-  ok: boolean;
-  message: string;
-  payload?: unknown;
-}
-
 interface StateBagPanelProps {
   snapshot: StateBagSnapshot | null;
   targetMode: string;
