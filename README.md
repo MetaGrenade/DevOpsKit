@@ -2,6 +2,8 @@
 
 **Repository:** [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit)
 
+**Release:** [0.0.0-alpha](https://github.com/MetaGrenade/DevOpsKit/releases/tag/v0.0.0-alpha) — initial MVP (alpha). See [CHANGELOG.md](./CHANGELOG.md).
+
 Framework-agnostic development operations suite for GTA V FiveM server development.
 
 FiveM DevOps Toolkit sits around your existing authoring tools (Blender/Sollumz, CodeWalker, OpenIV, txAdmin, QBCore, ESX, ox resources) as a workflow layer for validation, packaging, export, QA, and release automation.
@@ -45,7 +47,9 @@ pnpm test
 ## Development
 
 ```bash
-pnpm dev          # Start dashboard API + web
+pnpm dev          # Dashboard API (3001) + web (5173)
+pnpm dev:clean    # Free ports if a previous dev session is still running
+pnpm dev:nui      # In-game devtools NUI only (5175)
 pnpm test         # Run all package tests
 pnpm lint         # Run ESLint
 pnpm fdt --help  # Run CLI locally
@@ -92,6 +96,7 @@ pnpm fdt validate resources --workspace E:/FiveMServers/my-rp
 ### Contributor & agent guides
 
 - [Contributing](./docs/contributing.md)
+- [Changelog](./CHANGELOG.md)
 - [AI Agent Guide](./docs/ai-agent-guide.md)
 
 ## License

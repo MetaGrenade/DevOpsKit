@@ -28,7 +28,7 @@ const program = new Command();
 program
   .name("fdt")
   .description("FiveM DevOps Toolkit — FiveM server development operations suite")
-  .version("0.0.0");
+  .version("0.0.0-alpha");
 
 registerGlobalOptions(program);
 registerInitCommand(program);

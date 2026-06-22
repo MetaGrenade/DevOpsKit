@@ -25,12 +25,16 @@ pnpm test
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm dev` | Dashboard API + web (parallel via Turbo) |
+| `pnpm dev` | Dashboard API (3001) + web (5173); package TypeScript watch |
+| `pnpm dev:clean` | Free dev ports after a stuck or duplicate session |
+| `pnpm dev:nui` | In-game devtools NUI Vite server (5175) |
 | `pnpm test` | All package tests |
 | `pnpm build` | Build all packages |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript project references |
 | `pnpm fdt --help` | CLI entry |
+
+See [CHANGELOG.md](../CHANGELOG.md) for release history.
 
 Run targeted tests:
 

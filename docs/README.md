@@ -30,6 +30,7 @@ Framework-agnostic development operations for FiveM server development. These gu
 | Guide | Description |
 | --- | --- |
 | [Contributing](./contributing.md) | Dev setup, tests, conventions |
+| [Changelog](../CHANGELOG.md) | Release history |
 | [AI Agent Guide](./ai-agent-guide.md) | For AI coding agents in this repo |
 
 ## Related

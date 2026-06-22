@@ -33,6 +33,12 @@ export async function listenWithRetry(
       return;
     } catch (error) {
       if (!isAddrInUse(error) || attempt === maxAttempts) {
+        if (isAddrInUse(error)) {
+          throw new Error(
+            `Port ${options.port} is already in use after ${maxAttempts} retries. Stop the other process or run: pnpm dev:clean`,
+            { cause: error },
+          );
+        }
         throw error;
       }
 

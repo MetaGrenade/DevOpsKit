@@ -7,6 +7,7 @@ The FiveM DevOps Toolkit dashboard is a React web app for managing workspaces an
 From the toolkit repo root:
 
 ```bash
+pnpm dev:clean   # if ports 3001 or 5173 are still in use from a prior session
 pnpm dev
 ```
 
@@ -14,6 +15,7 @@ pnpm dev
 | --- | --- |
 | Web UI | http://localhost:5173 |
 | API | http://localhost:3001 |
+| Devtools NUI (`pnpm dev:nui`) | http://localhost:5175 |
 
 Configure the API in `apps/dashboard-api/.env` (copy from `.env.example`). The web dev server proxies `/api` requests to the API.
 
@@ -118,7 +120,7 @@ If a page shows “no report yet”, run the corresponding CLI command or use th
 
 ## API status
 
-The sidebar and top bar show **API online/offline**. If the UI loads but data fails, ensure the dashboard API is running on port 3001 and no stale process is holding the port.
+The sidebar and top bar show **API online/offline**. If the UI loads but data fails, ensure the dashboard API is running on port 3001. Run `pnpm dev:clean` if a stale process is holding the port.
 
 ## Related
 

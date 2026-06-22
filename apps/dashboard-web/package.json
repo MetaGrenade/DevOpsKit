@@ -1,6 +1,6 @@
 {
   "name": "@fdt/dashboard-web",
-  "version": "0.0.0",
+  "version": "0.0.0-alpha",
   "private": true,
   "type": "module",
   "scripts": {

@@ -29,7 +29,7 @@ export async function buildApp() {
   app.get("/health", async () => ({
     status: "ok",
     service: "fdt-dashboard-api",
-    version: "0.0.0",
+    version: "0.0.0-alpha",
   }));
 
   app.get("/api/v1/overview", async () => ({

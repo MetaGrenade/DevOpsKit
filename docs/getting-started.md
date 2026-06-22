@@ -47,6 +47,7 @@ my-rp/
 1. Start the dev stack from the toolkit repo:
 
    ```bash
+   pnpm dev:clean   # only if a previous session left ports 3001/5173 in use
    pnpm dev
    ```
 
