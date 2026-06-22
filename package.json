@@ -1,6 +1,6 @@
 {
   "name": "fivem-devops-toolkit",
-  "version": "0.0.0-alpha",
+  "version": "0.0.1-alpha",
   "private": true,
   "description": "Framework-agnostic development operations suite for FiveM server development",
   "homepage": "https://github.com/MetaGrenade/DevOpsKit",

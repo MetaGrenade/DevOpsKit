@@ -8,7 +8,7 @@ game 'gta5'
 name 'fdt_devtools'
 author 'FiveM DevOps Toolkit (https://github.com/MetaGrenade/DevOpsKit)'
 description 'Permission-protected in-game dev overlay for coordinates and zone export — part of FiveM DevOps Toolkit'
-version '0.0.0-alpha'
+version '0.0.1-alpha'
 
 lua54 'yes'
 

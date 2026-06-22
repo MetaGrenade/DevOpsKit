@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.0.1-alpha] - 2026-06-22
+
+### Added
+
+- Sample workspace **auto-initializes** environment profiles (local, dev, staging, production) when the dashboard loads workspaces.
+
+### Changed
+
+- Environment API — `GET /environment/profiles` returns **404** when no profiles exist, so the UI shows the initialize prompt instead of a broken empty state.
+- Environment API — generate, validate, recipe, and diff endpoints return **404/400** with clear messages instead of HTTP 500.
+- Environment page — surfaces API error messages; syncs diff **From/To** selects when profiles load; disables actions when profiles are missing.
+
+### Fixed
+
+- Environment Builder — generate `server.cfg`, txAdmin recipe, and validate actions failed on fresh clones because `.fdt/environment/profiles.json` was never created.
+- Environment diff — empty **From/To** dropdowns when profiles were not loaded.
+
 ## [0.0.0-alpha] - 2026-06-22
 
 First public alpha — FiveM DevOps Toolkit (FDT) MVP with passing GitHub **FDT CI** and **FDT Validate** workflows.
@@ -43,5 +60,6 @@ First public alpha — FiveM DevOps Toolkit (FDT) MVP with passing GitHub **FDT 
 - Local dev — port conflicts when `fdt-devtools-nui` and `dashboard-web` both started under `pnpm dev`.
 - Local dev — dashboard API `EADDRINUSE` on port 3001 now suggests `pnpm dev:clean`.
 
-[Unreleased]: https://github.com/MetaGrenade/DevOpsKit/compare/v0.0.0-alpha...HEAD
+[Unreleased]: https://github.com/MetaGrenade/DevOpsKit/compare/v0.0.1-alpha...HEAD
+[0.0.1-alpha]: https://github.com/MetaGrenade/DevOpsKit/compare/v0.0.0-alpha...v0.0.1-alpha
 [0.0.0-alpha]: https://github.com/MetaGrenade/DevOpsKit/releases/tag/v0.0.0-alpha

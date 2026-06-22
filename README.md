@@ -2,7 +2,7 @@
 
 **Repository:** [https://github.com/MetaGrenade/DevOpsKit](https://github.com/MetaGrenade/DevOpsKit)
 
-**Release:** [0.0.0-alpha](https://github.com/MetaGrenade/DevOpsKit/releases/tag/v0.0.0-alpha) — initial MVP (alpha). See [CHANGELOG.md](./CHANGELOG.md).
+**Release:** [0.0.1-alpha](https://github.com/MetaGrenade/DevOpsKit/releases/tag/v0.0.1-alpha) — latest alpha. See [CHANGELOG.md](./CHANGELOG.md).
 
 Framework-agnostic development operations suite for GTA V FiveM server development.
 
