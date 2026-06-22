@@ -15,7 +15,7 @@ export default function Panel({ children, className = "", glow = false }: PanelP
 interface PageIntroProps {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
 }
 

@@ -4,6 +4,7 @@ import { findNavItem } from "../../navigation";
 import type { WorkspaceWithConfig } from "../../types/api";
 import { MenuIcon } from "../icons";
 import Badge from "../ui/Badge";
+import ThemeToggle from "../ui/ThemeToggle";
 import Sidebar from "./Sidebar";
 
 interface AppShellProps {
@@ -120,12 +121,13 @@ export default function AppShell({
           </div>
           <div className="topbar-right">
             {activeWorkspace && (
-              <div className="topbar-workspace hidden sm:block">
+              <div className="topbar-workspace hidden md:block">
                 <span className="topbar-workspace-label">Workspace</span>
                 <span className="topbar-workspace-value">{activeWorkspace.name}</span>
               </div>
             )}
-            <Badge tone={apiBadgeTone(apiStatus)} className="lg:hidden">
+            <ThemeToggle />
+            <Badge tone={apiBadgeTone(apiStatus)} className="hidden sm:inline-flex">
               API {apiStatus}
             </Badge>
           </div>

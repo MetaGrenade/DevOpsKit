@@ -41,7 +41,7 @@ export default function OverviewPage({
   const activeCount = modules.filter((module) => module.status === "active").length;
 
   return (
-    <div className="page-stack">
+    <div className="page-stack page-stack-compact">
       <section className="hero-panel">
         <div className="hero-copy">
           <p className="hero-kicker">Operations command center</p>
@@ -92,45 +92,47 @@ export default function OverviewPage({
         </div>
       </section>
 
-      <section>
-        <PageIntro
-          eyebrow="Quick start"
-          title="Jump to a module"
-          description="Use the sidebar for the full catalog — these are the most common starting points."
-        />
-        <div className="quick-grid">
-          {QUICK_LINKS.map((link) => (
-            <button
-              key={link.page}
-              type="button"
-              className="quick-card"
-              onClick={() => onNavigate(link.page)}
-            >
-              <span className="quick-card-label">{link.label}</span>
-              <span className="quick-card-hint">{link.hint}</span>
-            </button>
-          ))}
+      <section className="page-grid-2">
+        <div>
+          <PageIntro
+            eyebrow="Quick start"
+            title="Jump to a module"
+            description="Use the sidebar for the full catalog — these are the most common starting points."
+          />
+          <div className="quick-grid">
+            {QUICK_LINKS.map((link) => (
+              <button
+                key={link.page}
+                type="button"
+                className="quick-card"
+                onClick={() => onNavigate(link.page)}
+              >
+                <span className="quick-card-label">{link.label}</span>
+                <span className="quick-card-hint">{link.hint}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </section>
 
-      <section>
-        <PageIntro
-          eyebrow="Platform modules"
-          title="Everything in one toolkit"
-          description={`${overview?.name ?? "FiveM DevOps Toolkit"} ships modular capabilities you can run from CLI, dashboard, or CI.`}
-        />
-        <div className="module-grid">
-          {modules.map((module) => (
-            <article key={module.id} className="module-card">
-              <div className="module-card-head">
-                <h3 className="module-card-title">{module.id.replace(/-/g, " ")}</h3>
-                <Badge tone={module.status === "active" ? "success" : "neutral"}>{module.status}</Badge>
-              </div>
-              <div className="module-card-bar" aria-hidden="true">
-                <span className={module.status === "active" ? "module-card-bar-fill" : ""} />
-              </div>
-            </article>
-          ))}
+        <div>
+          <PageIntro
+            eyebrow="Platform modules"
+            title="Everything in one toolkit"
+            description={`${overview?.name ?? "FiveM DevOps Toolkit"} ships modular capabilities you can run from CLI, dashboard, or CI.`}
+          />
+          <div className="module-grid">
+            {modules.map((module) => (
+              <article key={module.id} className="module-card">
+                <div className="module-card-head">
+                  <h3 className="module-card-title">{module.id.replace(/-/g, " ")}</h3>
+                  <Badge tone={module.status === "active" ? "success" : "neutral"}>{module.status}</Badge>
+                </div>
+                <div className="module-card-bar" aria-hidden="true">
+                  <span className={module.status === "active" ? "module-card-bar-fill" : ""} />
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

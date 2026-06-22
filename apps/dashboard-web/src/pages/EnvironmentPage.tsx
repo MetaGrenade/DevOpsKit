@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Panel, { PageIntro } from "../components/ui/Panel";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface EnvironmentConvar {
@@ -247,70 +248,73 @@ export default function EnvironmentPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <header className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h2 className="text-xl font-semibold">Environment Builder</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Generate repeatable <code className="rounded bg-white/5 px-1.5 py-0.5">server.cfg</code> files and
-          txAdmin recipe scaffolds from workspace resources and environment profiles.
-        </p>
-        {activeWorkspace && (
-          <p className="mt-2 text-xs text-slate-400">
-            Workspace: <span className="text-cyan-200">{activeWorkspace.name}</span>
-          </p>
-        )}
-      </header>
+    <div className="page-stack page-stack-compact">
+      <PageIntro
+        title="Environment Builder"
+        description={
+          <>
+            Generate repeatable <code className="inline-code">server.cfg</code> files and txAdmin recipe
+            scaffolds from workspace resources and environment profiles.
+            {activeWorkspace && (
+              <>
+                {" "}
+                Workspace: <span className="text-[var(--color-accent-ink)]">{activeWorkspace.name}</span>
+              </>
+            )}
+          </>
+        }
+      />
 
-      {message && (
-        <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-100">
-          {message}
-        </div>
-      )}
+      {message && <div className="alert alert-info">{message}</div>}
 
       {status === "missing" && (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-[#111831] p-6">
-          <p className="text-sm text-slate-300">{message}</p>
-          <button
-            type="button"
-            disabled={busy || !activeWorkspace}
-            onClick={() => void runInit()}
-            className="mt-4 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Initialize environment profiles
-          </button>
-        </div>
+        <Panel className="panel-dashed">
+          <p className="panel-subtext">{message}</p>
+          <div className="btn-row">
+            <button
+              type="button"
+              disabled={busy || !activeWorkspace}
+              onClick={() => void runInit()}
+              className="btn btn-primary btn-sm"
+            >
+              Initialize environment profiles
+            </button>
+          </div>
+        </Panel>
       )}
 
       {status === "ready" && (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <article className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-              <h3 className="font-medium">Profiles</h3>
-              <div className="mt-4 space-y-2">
+          <div className="page-grid-2">
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Profiles</h3>
+              <ul className="list-plain panel-section">
                 {profiles.map((profile) => (
-                  <label key={profile.id} className="flex items-center gap-3 text-sm">
-                    <input
-                      type="radio"
-                      name="env"
-                      checked={selectedEnv === profile.id}
-                      onChange={() => setSelectedEnv(profile.id)}
-                    />
-                    <span>
-                      {profile.label}{" "}
-                      <span className="text-slate-400">
-                        ({profile.kind}) · {profile.maxClients} slots · onesync {profile.onesync}
+                  <li key={profile.id}>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="env"
+                        checked={selectedEnv === profile.id}
+                        onChange={() => setSelectedEnv(profile.id)}
+                      />
+                      <span>
+                        {profile.label}{" "}
+                        <span className="text-[var(--color-muted)]">
+                          ({profile.kind}) · {profile.maxClients} slots · onesync {profile.onesync}
+                        </span>
                       </span>
-                    </span>
-                  </label>
+                    </label>
+                  </li>
                 ))}
-              </div>
+              </ul>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="btn-row">
                 <button
                   type="button"
                   disabled={busy || profiles.length === 0}
                   onClick={() => void runGenerateCfg()}
-                  className="rounded-lg bg-cyan-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                  className="btn btn-accent btn-sm"
                 >
                   Generate server.cfg
                 </button>
@@ -318,7 +322,7 @@ export default function EnvironmentPage() {
                   type="button"
                   disabled={busy || profiles.length === 0}
                   onClick={() => void runGenerateRecipe()}
-                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+                  className="btn btn-indigo btn-sm"
                 >
                   Generate txAdmin recipe
                 </button>
@@ -326,22 +330,22 @@ export default function EnvironmentPage() {
                   type="button"
                   disabled={busy || profiles.length === 0}
                   onClick={() => void runValidate()}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-200 disabled:opacity-50"
+                  className="btn btn-secondary btn-sm"
                 >
                   Validate profile
                 </button>
               </div>
-            </article>
+            </Panel>
 
-            <article className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-              <h3 className="font-medium">Environment diff</h3>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="text-sm">
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Environment diff</h3>
+              <div className="form-grid form-grid-2 panel-section">
+                <label className="form-field">
                   From
                   <select
                     value={diffFrom}
                     onChange={(event) => setDiffFrom(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   >
                     {profiles.map((profile) => (
                       <option key={`from-${profile.id}`} value={profile.id}>
@@ -350,12 +354,12 @@ export default function EnvironmentPage() {
                     ))}
                   </select>
                 </label>
-                <label className="text-sm">
+                <label className="form-field">
                   To
                   <select
                     value={diffTo}
                     onChange={(event) => setDiffTo(event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   >
                     {profiles.map((profile) => (
                       <option key={`to-${profile.id}`} value={profile.id}>
@@ -365,21 +369,23 @@ export default function EnvironmentPage() {
                   </select>
                 </label>
               </div>
-              <button
-                type="button"
-                disabled={busy || profiles.length < 2}
-                onClick={() => void runDiff()}
-                className="mt-4 rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-200 disabled:opacity-50"
-              >
-                Compare environments
-              </button>
+              <div className="btn-row">
+                <button
+                  type="button"
+                  disabled={busy || profiles.length < 2}
+                  onClick={() => void runDiff()}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Compare environments
+                </button>
+              </div>
 
               {diff && (
-                <div className="mt-4 rounded-xl border border-white/10 bg-[#0b1020] p-4 text-sm text-slate-300">
+                <div className="panel-section rounded-xl border border-[var(--color-line)] bg-[var(--color-input-bg)] p-3 text-sm">
                   <p>
                     {diff.fromProfileId} → {diff.toProfileId}
                   </p>
-                  <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                  <ul className="list-plain mt-2 text-xs text-[var(--color-muted)]">
                     <li>Convar changes: {diff.summary.convarChanges}</li>
                     <li>Secret changes: {diff.summary.secretChanges}</li>
                     <li>Setting changes: {diff.summary.settingChanges}</li>
@@ -387,65 +393,65 @@ export default function EnvironmentPage() {
                   </ul>
                 </div>
               )}
-            </article>
+            </Panel>
           </div>
 
-          {validation && (
-            <article className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-              <h3 className="font-medium">
-                Validation: {validation.profileId}{" "}
-                <span className={validation.passed ? "text-emerald-300" : "text-rose-300"}>
-                  {validation.passed ? "passed" : "failed"}
-                </span>
-              </h3>
-              <ul className="mt-4 space-y-2 text-sm">
-                {validation.findings.length === 0 && (
-                  <li className="text-slate-400">No findings.</li>
-                )}
-                {validation.findings.map((finding) => (
-                  <li key={`${finding.code}-${finding.message}`} className="text-slate-300">
-                    <span
-                      className={`mr-2 rounded px-2 py-0.5 text-xs uppercase ${
-                        finding.severity === "error"
-                          ? "bg-rose-500/15 text-rose-200"
-                          : finding.severity === "warning"
-                            ? "bg-amber-500/15 text-amber-200"
-                            : "bg-slate-500/10 text-slate-300"
-                      }`}
-                    >
-                      {finding.severity}
+          {(validation || exports.length > 0) && (
+            <div className="page-grid-2">
+              {validation && (
+                <Panel className="panel-compact">
+                  <h3 className="panel-heading">
+                    Validation: {validation.profileId}{" "}
+                    <span className={validation.passed ? "text-emerald-400" : "text-rose-400"}>
+                      {validation.passed ? "passed" : "failed"}
                     </span>
-                    {finding.message}
-                  </li>
-                ))}
-              </ul>
-            </article>
-          )}
+                  </h3>
+                  <ul className="list-plain panel-section text-sm">
+                    {validation.findings.length === 0 && (
+                      <li className="text-[var(--color-muted)]">No findings.</li>
+                    )}
+                    {validation.findings.map((finding) => (
+                      <li key={`${finding.code}-${finding.message}`}>
+                        <span
+                          className={`finding-badge ${
+                            finding.severity === "error"
+                              ? "finding-badge-error"
+                              : finding.severity === "warning"
+                                ? "finding-badge-warning"
+                                : "finding-badge-info"
+                          }`}
+                        >
+                          {finding.severity}
+                        </span>
+                        {finding.message}
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              )}
 
-          {exports.length > 0 && (
-            <article className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-              <h3 className="font-medium">Generated exports</h3>
-              <p className="mt-2 text-xs text-slate-400">
-                Outputs under <code className="rounded bg-white/5 px-1">.fdt/exports/txadmin/</code>
-              </p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-300">
-                {exports.map((entry) => (
-                  <li key={entry.profileId}>
-                    {entry.profileId}: server.cfg {entry.serverCfgExists ? "✓" : "—"}, recipe{" "}
-                    {entry.recipeExists ? "✓" : "—"}
-                  </li>
-                ))}
-              </ul>
-            </article>
+              {exports.length > 0 && (
+                <Panel className="panel-compact">
+                  <h3 className="panel-heading">Generated exports</h3>
+                  <p className="panel-subtext">
+                    Outputs under <code className="inline-code">.fdt/exports/txadmin/</code>
+                  </p>
+                  <ul className="list-plain panel-section text-sm">
+                    {exports.map((entry) => (
+                      <li key={entry.profileId}>
+                        {entry.profileId}: server.cfg {entry.serverCfgExists ? "✓" : "—"}, recipe{" "}
+                        {entry.recipeExists ? "✓" : "—"}
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              )}
+            </div>
           )}
         </>
       )}
 
-      {status === "error" && (
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-100">
-          {message}
-        </div>
-      )}
-    </section>
+      {status === "error" && <div className="alert alert-error">{message}</div>}
+    </div>
   );
 }
