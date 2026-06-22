@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PageAlert } from "./ui/page";
 
 type BrowseMode = "directory" | "file";
 
@@ -129,88 +130,78 @@ export default function PathPicker({
   const atRoots = listing?.scope === "roots";
 
   return (
-    <div className="block text-sm">
-      <span className="text-slate-300">{label}</span>
-      <div className="mt-1 flex gap-2">
+    <label className="form-field">
+      <span className="form-label">{label}</span>
+      <div className="flex gap-2">
         <input
           required={required}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 font-mono text-xs"
+          className="form-control form-control-mono min-w-0 flex-1"
           placeholder={placeholder}
         />
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="shrink-0 rounded-lg bg-white/10 px-3 py-2 text-xs text-slate-100 hover:bg-white/15"
-        >
+        <button type="button" onClick={() => setOpen(true)} className="btn btn-secondary btn-sm shrink-0">
           Browse
         </button>
       </div>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#111831] shadow-2xl">
-            <div className="border-b border-white/10 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <h4 className="font-medium">
-                  {mode === "file" ? "Select file" : "Select folder"}
-                </h4>
-                <div className="flex items-center gap-2">
-                  {!atRoots && (
+        <div className="modal-backdrop">
+          <div className="modal-panel">
+            <div className="modal-header">
+              <div className="min-w-0 flex-1">
+                <h4 className="panel-heading">{mode === "file" ? "Select file" : "Select folder"}</h4>
+                <p className="panel-subtext truncate">
+                  {atRoots ? "Choose a drive or location" : currentPath || "Loading…"}
+                </p>
+                <div className="breadcrumb-row">
+                  {breadcrumbs.map((segment, index) => (
                     <button
+                      key={`${segment}-${index}`}
                       type="button"
-                      onClick={() => loadListing(FILESYSTEM_ROOTS_PATH).catch(() => undefined)}
-                      className="rounded-lg bg-white/10 px-2 py-1 text-xs text-slate-200 hover:bg-white/15"
+                      onClick={() => {
+                        const target = buildBreadcrumbPath(breadcrumbs, index);
+                        if (target) {
+                          loadListing(target).catch(() => undefined);
+                        }
+                      }}
+                      className="breadcrumb-chip"
                     >
-                      All drives
+                      {segment}
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="rounded-lg px-2 py-1 text-sm text-slate-400 hover:bg-white/5 hover:text-white"
-                  >
-                    Close
-                  </button>
+                  ))}
                 </div>
               </div>
-              <p className="mt-1 truncate font-mono text-xs text-slate-400">
-                {atRoots ? "Choose a drive or location" : currentPath || "Loading…"}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1 text-xs">
-                {breadcrumbs.map((segment, index) => (
+              <div className="btn-row" style={{ marginTop: 0 }}>
+                {!atRoots && (
                   <button
-                    key={`${segment}-${index}`}
                     type="button"
-                    onClick={() => {
-                      const target = buildBreadcrumbPath(breadcrumbs, index);
-                      if (target) {
-                        loadListing(target).catch(() => undefined);
-                      }
-                    }}
-                    className="rounded bg-white/5 px-2 py-1 text-slate-300 hover:bg-white/10"
+                    onClick={() => loadListing(FILESYSTEM_ROOTS_PATH).catch(() => undefined)}
+                    className="btn btn-secondary btn-sm"
                   >
-                    {segment}
+                    All drives
                   </button>
-                ))}
+                )}
+                <button type="button" onClick={() => setOpen(false)} className="btn btn-secondary btn-sm">
+                  Close
+                </button>
               </div>
             </div>
 
-            <div className="max-h-[50vh] overflow-y-auto px-2 py-2">
-              {loading && <p className="px-2 py-3 text-sm text-slate-400">Loading folder…</p>}
-              {error && <p className="px-2 py-3 text-sm text-rose-300">{error}</p>}
+            <div className="modal-body">
+              {loading && <p className="panel-subtext px-2 py-3">Loading folder…</p>}
+              {error && <PageAlert variant="error">{error}</PageAlert>}
 
               {!loading && listing && (
-                <ul className="space-y-1">
+                <ul className="browse-list">
                   {listing.parent && (
                     <li>
                       <button
                         type="button"
                         onClick={() => loadListing(listing.parent!).catch(() => undefined)}
-                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5"
+                        className="browse-item"
                       >
-                        <span className="text-slate-400">..</span>
+                        <span className="text-[var(--color-muted)]">..</span>
                         <span>{listing.parent === FILESYSTEM_ROOTS_PATH ? "All drives" : "Parent folder"}</span>
                       </button>
                     </li>
@@ -230,10 +221,12 @@ export default function PathPicker({
                             handleSelect(entry.path);
                           }
                         }}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-white/5"
+                        className="browse-item"
                       >
                         <span className="truncate">
-                          <span className="text-slate-500">{entry.type === "directory" ? "[Dir]" : "[File]"}</span>{" "}
+                          <span className="text-[var(--color-muted)]">
+                            {entry.type === "directory" ? "[Dir]" : "[File]"}
+                          </span>{" "}
                           {entry.name}
                         </span>
                         {entry.type === "directory" && mode === "directory" && !atRoots && (
@@ -251,20 +244,20 @@ export default function PathPicker({
                                 handleSelect(entry.path);
                               }
                             }}
-                            className="shrink-0 rounded bg-cyan-500/20 px-2 py-1 text-xs text-cyan-200"
+                            className="btn btn-accent btn-sm shrink-0"
                           >
                             Select
                           </span>
                         )}
                         {entry.type === "file" && mode === "file" && (
-                          <span className="shrink-0 text-xs text-cyan-300">Select</span>
+                          <span className="text-xs text-[var(--color-accent-ink)] shrink-0">Select</span>
                         )}
                       </button>
                     </li>
                   ))}
 
                   {listing.entries.length === 0 && (
-                    <li className="px-3 py-4 text-sm text-slate-400">
+                    <li className="panel-subtext px-3 py-4">
                       {atRoots ? "No drives found." : "This folder is empty."}
                     </li>
                   )}
@@ -272,23 +265,17 @@ export default function PathPicker({
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
-              <p className="truncate font-mono text-xs text-slate-500">
-                {atRoots ? "All drives" : currentPath}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg bg-white/10 px-3 py-2 text-sm hover:bg-white/15"
-                >
+            <div className="modal-footer">
+              <p className="panel-subtext truncate font-mono">{atRoots ? "All drives" : currentPath}</p>
+              <div className="btn-row" style={{ marginTop: 0 }}>
+                <button type="button" onClick={() => setOpen(false)} className="btn btn-secondary btn-sm">
                   Cancel
                 </button>
                 {mode === "directory" && currentPath && !atRoots && (
                   <button
                     type="button"
                     onClick={() => handleSelect(currentPath)}
-                    className="rounded-lg bg-cyan-500/20 px-3 py-2 text-sm text-cyan-100 hover:bg-cyan-500/30"
+                    className="btn btn-primary btn-sm"
                   >
                     Select this folder
                   </button>
@@ -298,6 +285,6 @@ export default function PathPicker({
           </div>
         </div>
       )}
-    </div>
+    </label>
   );
 }

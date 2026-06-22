@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PathPicker from "../components/PathPicker";
+import { PageAlert, PageIntro, PageStack, Panel } from "../components/ui/page";
 import { fetchWorkspaces, selectWorkspace as selectWorkspaceApi } from "../lib/workspaces";
 import type { CreateWorkspacePayload, WorkspaceWithConfig } from "../types/api";
 
@@ -11,8 +12,8 @@ const emptyForm: CreateWorkspacePayload = {
   serverCfg: "",
 };
 
-function pathStatus(ok: boolean): string {
-  return ok ? "text-emerald-300" : "text-rose-300";
+function pathStatusClass(ok: boolean): string {
+  return ok ? "path-ok" : "path-bad";
 }
 
 function artifactSourceLabel(
@@ -185,190 +186,173 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
   }
 
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h2 className="text-xl font-semibold">Workspaces</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Point FiveM DevOps Toolkit at any FiveM server directory on your machine. Use Browse to pick
-          folders and files directly instead of typing paths manually.
-        </p>
-        {message && <p className="mt-4 text-sm text-cyan-200">{message}</p>}
-      </div>
+    <PageStack>
+      <PageIntro
+        title="Workspaces"
+        description="Point FiveM DevOps Toolkit at any FiveM server directory on your machine. Use Browse to pick folders and files directly instead of typing paths manually."
+      />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <form
-          onSubmit={handleCreate}
-          className="rounded-2xl border border-white/10 bg-[#111831] p-6 space-y-4"
-        >
-          <h3 className="font-medium">Create New Workspace</h3>
-          <p className="text-sm text-slate-400">
-            Creates a workspace directory with config and output folders on disk.
-          </p>
+      {message && <PageAlert>{message}</PageAlert>}
 
-          <label className="block text-sm">
-            <span className="text-slate-300">Display name</span>
-            <input
+      <div className="page-grid-2">
+        <Panel className="panel-compact">
+          <form onSubmit={handleCreate} className="form-stack">
+            <div>
+              <h3 className="panel-heading">Create New Workspace</h3>
+              <p className="panel-subtext">Creates a workspace directory with config and output folders on disk.</p>
+            </div>
+
+            <label className="form-field">
+              <span className="form-label">Display name</span>
+              <input
+                required
+                value={form.name}
+                onChange={(event) => updateForm("name", event.target.value)}
+                className="form-control"
+                placeholder="FiveM Dev Server"
+              />
+            </label>
+
+            <PathPicker
+              label="Workspace directory"
+              value={form.workspaceDirectory}
+              onChange={handleWorkspaceDirectoryChange}
+              mode="directory"
+              placeholder="E:/FiveMServers/fdt"
               required
-              value={form.name}
-              onChange={(event) => updateForm("name", event.target.value)}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
-              placeholder="FiveM Dev Server"
             />
-          </label>
 
-          <PathPicker
-            label="Workspace directory"
-            value={form.workspaceDirectory}
-            onChange={handleWorkspaceDirectoryChange}
-            mode="directory"
-            placeholder="E:/FiveMServers/fdt"
-            required
-          />
+            <PathPicker
+              label="Server root"
+              value={form.serverRoot}
+              onChange={(value) => updateForm("serverRoot", value)}
+              mode="directory"
+              placeholder="E:/FiveMServers/fdt/server"
+              required
+            />
 
-          <PathPicker
-            label="Server root"
-            value={form.serverRoot}
-            onChange={(value) => updateForm("serverRoot", value)}
-            mode="directory"
-            placeholder="E:/FiveMServers/fdt/server"
-            required
-          />
+            <PathPicker
+              label="Resources folder"
+              value={form.resourcesRoot}
+              onChange={(value) => updateForm("resourcesRoot", value)}
+              mode="directory"
+              placeholder="E:/FiveMServers/fdt/server/resources"
+              required
+            />
 
-          <PathPicker
-            label="Resources folder"
-            value={form.resourcesRoot}
-            onChange={(value) => updateForm("resourcesRoot", value)}
-            mode="directory"
-            placeholder="E:/FiveMServers/fdt/server/resources"
-            required
-          />
+            <PathPicker
+              label="server.cfg path"
+              value={form.serverCfg}
+              onChange={(value) => updateForm("serverCfg", value)}
+              mode="file"
+              fileExtensions={[".cfg"]}
+              placeholder="E:/FiveMServers/fdt/server/server.cfg"
+              required
+            />
 
-          <PathPicker
-            label="server.cfg path"
-            value={form.serverCfg}
-            onChange={(value) => updateForm("serverCfg", value)}
-            mode="file"
-            fileExtensions={[".cfg"]}
-            placeholder="E:/FiveMServers/fdt/server/server.cfg"
-            required
-          />
+            <button type="submit" disabled={submitting} className="btn btn-primary btn-sm">
+              Create workspace
+            </button>
+          </form>
+        </Panel>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/30 disabled:opacity-50"
-          >
-            Create workspace
-          </button>
-        </form>
+        <Panel className="panel-compact">
+          <form onSubmit={handleRegister} className="form-stack">
+            <div>
+              <h3 className="panel-heading">Register Existing Workspace</h3>
+              <p className="panel-subtext">
+                Use this if you already ran <code className="inline-code">fdt init</code> in an external server
+                folder.
+              </p>
+            </div>
 
-        <form
-          onSubmit={handleRegister}
-          className="rounded-2xl border border-white/10 bg-[#111831] p-6 space-y-4"
-        >
-          <h3 className="font-medium">Register Existing Workspace</h3>
-          <p className="text-sm text-slate-400">
-            Use this if you already ran <code className="rounded bg-white/5 px-1 py-0.5">fdt init</code>{" "}
-            in an external server folder.
-          </p>
+            <PathPicker
+              label="Workspace directory"
+              value={registerPath}
+              onChange={setRegisterPath}
+              mode="directory"
+              placeholder="E:/FiveMServers/fdt"
+              required
+            />
 
-          <PathPicker
-            label="Workspace directory"
-            value={registerPath}
-            onChange={setRegisterPath}
-            mode="directory"
-            placeholder="E:/FiveMServers/fdt"
-            required
-          />
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="rounded-lg bg-white/10 px-4 py-2 text-sm text-slate-100 hover:bg-white/15 disabled:opacity-50"
-          >
-            Register workspace
-          </button>
-
-          <button
-            type="button"
-            onClick={() => validateActive().catch(() => setMessage("Validation failed"))}
-            className="block rounded-lg border border-cyan-500/30 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10"
-          >
-            Validate active workspace
-          </button>
-        </form>
+            <div className="btn-row">
+              <button type="submit" disabled={submitting} className="btn btn-secondary btn-sm">
+                Register workspace
+              </button>
+              <button
+                type="button"
+                onClick={() => validateActive().catch(() => setMessage("Validation failed"))}
+                className="btn btn-secondary btn-sm"
+              >
+                Validate active workspace
+              </button>
+            </div>
+          </form>
+        </Panel>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="font-medium">Registered Workspaces</h3>
-          {status === "loading" && <span className="text-xs text-slate-400">Loading…</span>}
+      <Panel className="panel-compact">
+        <div className="workspace-card-head">
+          <h3 className="panel-heading">Registered Workspaces</h3>
+          {status === "loading" && <span className="panel-subtext">Loading…</span>}
         </div>
 
-        {status === "error" && (
-          <p className="mt-4 text-sm text-rose-300">Failed to load workspaces from the API.</p>
-        )}
+        {status === "error" && <PageAlert variant="error">Failed to load workspaces from the API.</PageAlert>}
 
-        <div className="mt-4 space-y-4">
+        <div className="panel-section space-y-3">
           {workspaces.map((workspace) => {
             const isActive = workspace.id === activeWorkspaceId;
             return (
               <article
                 key={workspace.id}
-                className={`rounded-xl border p-4 ${isActive ? "border-cyan-500/40 bg-cyan-500/5" : "border-white/10 bg-[#0b1020]"}`}
+                className={`workspace-card ${isActive ? "workspace-card-active" : ""}`}
               >
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="workspace-card-head">
                   <div>
-                    <h4 className="font-medium">{workspace.name}</h4>
-                    <p className="mt-1 font-mono text-xs text-slate-400">{workspace.directory}</p>
+                    <h4 className="workspace-card-title">{workspace.name}</h4>
+                    <p className="workspace-card-path">{workspace.directory}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="btn-row" style={{ marginTop: 0 }}>
                     {!isActive && (
                       <button
                         type="button"
                         onClick={() => selectWorkspace(workspace.id)}
-                        className="rounded-lg bg-white/10 px-3 py-1.5 text-xs hover:bg-white/15"
+                        className="btn btn-secondary btn-sm"
                       >
                         Select
                       </button>
                     )}
-                    {isActive && (
-                      <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs text-cyan-200">
-                        Active
-                      </span>
-                    )}
+                    {isActive && <span className="status-pill status-pill-active">Active</span>}
                   </div>
                 </div>
 
-                <dl className="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                <dl className="meta-grid">
                   <div>
-                    <dt className="text-slate-500">Resources</dt>
-                    <dd className={`font-mono ${pathStatus(workspace.pathChecks.resourcesRoot)}`}>
+                    <dt>Resources</dt>
+                    <dd className={`font-mono ${pathStatusClass(workspace.pathChecks.resourcesRoot)}`}>
                       {workspace.resolvedPaths.resourcesRoot}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">server.cfg</dt>
-                    <dd className={`font-mono ${pathStatus(workspace.pathChecks.serverCfg)}`}>
+                    <dt>server.cfg</dt>
+                    <dd className={`font-mono ${pathStatusClass(workspace.pathChecks.serverCfg)}`}>
                       {workspace.resolvedPaths.serverCfg}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">Server root</dt>
-                    <dd className={`font-mono ${pathStatus(workspace.pathChecks.serverRoot)}`}>
+                    <dt>Server root</dt>
+                    <dd className={`font-mono ${pathStatusClass(workspace.pathChecks.serverRoot)}`}>
                       {workspace.resolvedPaths.serverRoot}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">Report output</dt>
-                    <dd className="font-mono text-slate-300">{workspace.resolvedPaths.reportPath}</dd>
+                    <dt>Report output</dt>
+                    <dd className="font-mono">{workspace.resolvedPaths.reportPath}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">FXServer artifact</dt>
+                    <dt>FXServer artifact</dt>
                     <dd
-                      className={
-                        workspace.serverArtifact ? "font-mono text-emerald-300" : "text-slate-400"
-                      }
+                      className={workspace.serverArtifact ? "font-mono path-ok" : "text-[var(--color-muted)]"}
                       title={workspace.serverArtifact?.path}
                     >
                       {workspace.serverArtifact
@@ -376,7 +360,7 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
                         : "Not detected"}
                     </dd>
                     {workspace.serverArtifact && (
-                      <dd className="mt-1 text-[11px] text-slate-500">
+                      <dd className="mt-1 text-[11px] text-[var(--color-muted)]">
                         via {artifactSourceLabel(workspace.serverArtifact.source)}
                       </dd>
                     )}
@@ -384,17 +368,17 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
                   {workspace.frameworkProfile && (
                     <>
                       <div>
-                        <dt className="text-slate-500">Framework</dt>
-                        <dd className="text-cyan-200">{workspace.frameworkProfile.framework}</dd>
-                        <dd className="mt-1 text-[11px] text-slate-500">
+                        <dt>Framework</dt>
+                        <dd className="text-[var(--color-accent-ink)]">{workspace.frameworkProfile.framework}</dd>
+                        <dd className="mt-1 text-[11px] text-[var(--color-muted)]">
                           {frameworkSourceLabel(workspace.frameworkProfile.source)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-slate-500">Inventory</dt>
-                        <dd className="text-cyan-200">{workspace.frameworkProfile.inventory}</dd>
+                        <dt>Inventory</dt>
+                        <dd className="text-[var(--color-accent-ink)]">{workspace.frameworkProfile.inventory}</dd>
                         {workspace.frameworkProfile.detectedResources.length > 0 && (
-                          <dd className="mt-1 text-[11px] text-slate-500">
+                          <dd className="mt-1 text-[11px] text-[var(--color-muted)]">
                             {workspace.frameworkProfile.detectedResources.join(", ")}
                           </dd>
                         )}
@@ -404,18 +388,16 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
                 </dl>
 
                 {isActive && workspace.frameworkProfile && (
-                  <div className="mt-4 rounded-lg border border-white/10 bg-[#111831] p-4">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Framework override</p>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <label className="block text-xs">
-                        <span className="text-slate-400">Framework</span>
+                  <div className="panel-section rounded-lg border border-[var(--color-line)] bg-[var(--color-input-bg)] p-3">
+                    <p className="text-xs uppercase tracking-wide text-[var(--color-muted)]">Framework override</p>
+                    <div className="form-grid form-grid-2 panel-section">
+                      <label className="form-field text-xs">
+                        <span className="form-label">Framework</span>
                         <select
                           defaultValue={workspace.frameworkProfile.framework}
-                          onChange={(event) =>
-                            void updateActiveFramework({ framework: event.target.value })
-                          }
+                          onChange={(event) => void updateActiveFramework({ framework: event.target.value })}
                           disabled={submitting}
-                          className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-2 py-1.5"
+                          className="form-control"
                         >
                           {["custom", "qbox", "qbcore", "esx", "ox"].map((value) => (
                             <option key={value} value={value}>
@@ -424,15 +406,13 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
                           ))}
                         </select>
                       </label>
-                      <label className="block text-xs">
-                        <span className="text-slate-400">Inventory</span>
+                      <label className="form-field text-xs">
+                        <span className="form-label">Inventory</span>
                         <select
                           defaultValue={workspace.frameworkProfile.inventory}
-                          onChange={(event) =>
-                            void updateActiveFramework({ inventory: event.target.value })
-                          }
+                          onChange={(event) => void updateActiveFramework({ inventory: event.target.value })}
                           disabled={submitting}
-                          className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-2 py-1.5"
+                          className="form-control"
                         >
                           {["custom", "ox-inventory", "qbcore", "esx"].map((value) => (
                             <option key={value} value={value}>
@@ -442,16 +422,16 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
                         </select>
                       </label>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="btn-row">
                       <button
                         type="button"
                         disabled={submitting}
                         onClick={() => void updateActiveFramework({ clearManualOverride: true })}
-                        className="rounded-lg border border-white/10 px-3 py-1 text-xs hover:bg-white/5 disabled:opacity-50"
+                        className="btn btn-secondary btn-sm"
                       >
                         Reset to auto-detect
                       </button>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-[var(--color-muted)]">
                         Recommended adapters: {workspace.frameworkProfile.recommendedAdapters.join(", ")}
                       </span>
                     </div>
@@ -461,7 +441,7 @@ export default function WorkspacesPage({ onWorkspaceChanged }: { onWorkspaceChan
             );
           })}
         </div>
-      </div>
-    </section>
+      </Panel>
+    </PageStack>
   );
 }

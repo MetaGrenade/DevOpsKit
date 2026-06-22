@@ -1,4 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface SecurityFinding {
@@ -36,18 +45,18 @@ interface SecurityReport {
   findings: SecurityFinding[];
 }
 
-function severityClass(severity: SecurityFinding["severity"]): string {
+function severityBadgeClass(severity: SecurityFinding["severity"]): string {
   switch (severity) {
     case "critical":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "high":
-      return "text-orange-200 bg-orange-500/15";
+      return "finding-badge finding-badge-warning";
     case "medium":
-      return "text-amber-200 bg-amber-500/15";
+      return "finding-badge finding-badge-warning";
     case "low":
-      return "text-cyan-200 bg-cyan-500/15";
+      return "finding-badge finding-badge-info";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -143,92 +152,79 @@ export default function SecurityPage() {
   }, [report, showSuppressed]);
 
   if (status === "loading") {
-    return <p className="text-sm text-slate-400">Loading security report…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading security report…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Security</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to view security findings.</p>
-      </section>
+      <PageStack>
+        <EmptyState title="Security" description="Select an active workspace to view security findings." />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Security Auditor</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-              Lua pattern scanner for risky net events, reward handlers, dangerous functions, and SQL/HTTP
-              concatenation. Reports stored at{" "}
-              <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/security-audit.json</code>.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void runScan()}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30"
-            >
+    <PageStack>
+      <PageIntro
+        title="Security Auditor"
+        description={
+          <>
+            Lua pattern scanner for risky net events, reward handlers, dangerous functions, and SQL/HTTP
+            concatenation. Reports stored at{" "}
+            <code className="inline-code">.fdt/reports/security-audit.json</code>.
+          </>
+        }
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button type="button" onClick={() => void runScan()} className="btn btn-accent btn-sm">
               Run scan
             </button>
-            <button
-              type="button"
-              onClick={() => void createBaseline()}
-              className="rounded-lg bg-emerald-500/15 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-emerald-500/25"
-            >
+            <button type="button" onClick={() => void createBaseline()} className="btn btn-secondary btn-sm">
               Save baseline
             </button>
-            <button
-              type="button"
-              onClick={() => void loadReport()}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm text-slate-300 hover:border-white/20"
-            >
+            <button type="button" onClick={() => void loadReport()} className="btn btn-secondary btn-sm">
               Refresh
             </button>
           </div>
-        </div>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
+      {message && <PageAlert>{message}</PageAlert>}
 
-        {status === "missing" && (
-          <p className="mt-4 text-sm text-slate-400">
-            No security report yet. Run a scan or use{" "}
-            <code className="text-slate-200">fdt security scan --workspace {activeWorkspace.directory}</code>.
-          </p>
-        )}
-      </section>
+      {status === "missing" && (
+        <PageAlert variant="warning">
+          No security report yet. Run a scan or use{" "}
+          <code className="inline-code">fdt security scan --workspace {activeWorkspace.directory}</code>.
+        </PageAlert>
+      )}
 
       {report && (
         <>
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ["Critical", report.summary.critical, report.summary.newCritical, "text-rose-300"],
-              ["High", report.summary.high, report.summary.newHigh, "text-orange-300"],
-              ["Medium", report.summary.medium, null, "text-amber-300"],
-              ["Suppressed", report.summary.suppressed, null, "text-slate-300"],
-            ].map(([label, total, fresh, color]) => (
-              <article key={label as string} className="rounded-xl border border-white/10 bg-[#111831] p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">{label as string}</p>
-                <p className={`mt-2 text-2xl font-semibold ${color as string}`}>{total as number}</p>
-                {fresh !== null && (
-                  <p className="mt-1 text-xs text-slate-400">{fresh as number} new since baseline</p>
-                )}
-              </article>
-            ))}
-          </section>
+          <StatGrid columns={4}>
+            <StatTile
+              label="Critical"
+              value={report.summary.critical}
+              hint={`${report.summary.newCritical} new since baseline`}
+              tone="danger"
+            />
+            <StatTile
+              label="High"
+              value={report.summary.high}
+              hint={`${report.summary.newHigh} new since baseline`}
+              tone="warning"
+            />
+            <StatTile label="Medium" value={report.summary.medium} tone="warning" />
+            <StatTile label="Suppressed" value={report.summary.suppressed} tone="muted" />
+          </StatGrid>
 
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="font-semibold">Findings by resource</h3>
-              <label className="flex items-center gap-2 text-sm text-slate-400">
+          <Panel className="panel-compact">
+            <div className="workspace-card-head">
+              <h3 className="panel-heading">Findings by resource</h3>
+              <label className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
                 <input
                   type="checkbox"
                   checked={showSuppressed}
@@ -238,45 +234,37 @@ export default function SecurityPage() {
               </label>
             </div>
 
-            <div className="mt-4 space-y-6">
+            <div className="panel-section space-y-5">
               {[...groupedFindings.entries()].map(([resource, findings]) => (
                 <div key={resource}>
-                  <h4 className="font-medium text-cyan-200">{resource}</h4>
+                  <h4 className="font-medium text-[var(--color-accent-ink)]">{resource}</h4>
                   <div className="mt-3 space-y-3">
                     {findings.map((finding) => (
                       <article
                         key={finding.id}
-                        className={`rounded-xl border border-white/10 p-4 ${finding.suppressed ? "opacity-60" : ""}`}
+                        className={`finding-card ${finding.suppressed ? "finding-card-muted" : ""}`}
                       >
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className={`rounded-full px-2 py-0.5 uppercase ${severityClass(finding.severity)}`}>
-                            {finding.severity}
-                          </span>
-                          <span className="text-slate-500">{finding.category}</span>
-                          <span className="font-mono text-slate-400">{finding.code}</span>
+                          <span className={severityBadgeClass(finding.severity)}>{finding.severity}</span>
+                          <span className="text-[var(--color-muted)]">{finding.category}</span>
+                          <span className="font-mono text-[var(--color-muted)]">{finding.code}</span>
                           {finding.isNew && (
-                            <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-rose-200">new</span>
+                            <span className="finding-badge finding-badge-error">new</span>
                           )}
                           {finding.suppressed && (
-                            <span className="rounded-full bg-slate-500/15 px-2 py-0.5 text-slate-300">
-                              baseline
-                            </span>
+                            <span className="finding-badge finding-badge-info">baseline</span>
                           )}
                         </div>
-                        <p className="mt-2 text-sm text-slate-200">{finding.message}</p>
+                        <p className="mt-2 text-sm">{finding.message}</p>
                         {(finding.file || finding.line) && (
-                          <p className="mt-1 font-mono text-xs text-slate-500">
+                          <p className="mt-1 font-mono text-xs text-[var(--color-muted)]">
                             {finding.file}
                             {finding.line ? `:${finding.line}` : ""}
                           </p>
                         )}
-                        {finding.snippet && (
-                          <pre className="mt-2 overflow-x-auto rounded-lg bg-[#0b1020] p-3 text-xs text-slate-300">
-                            {finding.snippet}
-                          </pre>
-                        )}
+                        {finding.snippet && <pre className="code-block mt-2">{finding.snippet}</pre>}
                         {finding.remediation && (
-                          <p className="mt-2 text-xs text-slate-400">{finding.remediation}</p>
+                          <p className="mt-2 text-xs text-[var(--color-muted)]">{finding.remediation}</p>
                         )}
                       </article>
                     ))}
@@ -284,9 +272,9 @@ export default function SecurityPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </Panel>
         </>
       )}
-    </div>
+    </PageStack>
   );
 }

@@ -1,4 +1,12 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  NotePanel,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface CiGateResult {
@@ -19,16 +27,16 @@ interface CiPipelineReport {
   gates: CiGateResult[];
 }
 
-function statusClass(status: string): string {
+function gateStatusClass(status: string): string {
   switch (status) {
     case "passed":
-      return "text-emerald-200 bg-emerald-500/15";
+      return "finding-badge finding-badge-info path-ok";
     case "failed":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "warn":
-      return "text-amber-200 bg-amber-500/15";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -104,114 +112,106 @@ export default function CiPage() {
   }
 
   if (status === "loading") {
-    return <p className="text-sm text-slate-400">Loading CI pipeline report…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading CI pipeline report…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">CI / CD Integration</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to view CI gate results.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="CI / CD Integration"
+          description="Select an active workspace to view CI gate results."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">CI / CD Integration</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Run the same validation, security, and QA gates locally or in GitHub Actions with{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">fdt ci run</code>. Reports are written to{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/ci-pipeline.json</code>.
-        </p>
-
-        <div className="mt-4 rounded-xl border border-dashed border-cyan-500/20 bg-cyan-500/5 p-4 text-sm text-slate-300">
-          <p className="font-medium text-cyan-200">Default gates</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-400">
-            <li>
-              <code className="text-slate-200">validate</code> — resource doctor (report-only by default in sample CI)
-            </li>
-            <li>
-              <code className="text-slate-200">security</code> — blocks on new critical findings when a baseline exists
-            </li>
-            <li>
-              <code className="text-slate-200">qa</code> — scenario schema validation
-            </li>
-            <li>
-              <code className="text-slate-200">clothing</code> — auto-discover packs, scan stream folders, and
-              validate slot conflicts (blocking when errors are found)
-            </li>
-          </ul>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-3">
+    <PageStack>
+      <PageIntro
+        title="CI / CD Integration"
+        description={
+          <>
+            Run the same validation, security, and QA gates locally or in GitHub Actions with{" "}
+            <code className="inline-code">fdt ci run</code>. Reports are written to{" "}
+            <code className="inline-code">.fdt/reports/ci-pipeline.json</code>.
+          </>
+        }
+        actions={
           <button
             type="button"
             disabled={running}
             onClick={() => void runPipeline()}
-            className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50"
+            className="btn btn-accent btn-sm"
           >
             {running ? "Running…" : "Run CI pipeline"}
           </button>
-        </div>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
+      <NotePanel title="Default gates">
+        <ul>
+          <li>
+            <code>validate</code> — resource doctor (report-only by default in sample CI)
+          </li>
+          <li>
+            <code>security</code> — blocks on new critical findings when a baseline exists
+          </li>
+          <li>
+            <code>qa</code> — scenario schema validation
+          </li>
+          <li>
+            <code>clothing</code> — auto-discover packs, scan stream folders, and validate slot conflicts
+            (blocking when errors are found)
+          </li>
+        </ul>
+      </NotePanel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
+      {message && <PageAlert>{message}</PageAlert>}
+
+      <Panel className="panel-compact">
         {report ? (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="workspace-card-head">
               <div>
-                <h3 className="text-lg font-semibold">
-                  Pipeline {report.passed ? "passed" : "failed"}
-                </h3>
-                <p className="mt-1 text-sm text-slate-400">
+                <h3 className="panel-heading">Pipeline {report.passed ? "passed" : "failed"}</h3>
+                <p className="panel-subtext">
                   {new Date(report.generatedAt).toLocaleString()}
                   {reportPath ? ` · ${reportPath}` : ""}
                 </p>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  report.passed ? "bg-emerald-500/15 text-emerald-200" : "bg-rose-500/15 text-rose-200"
-                }`}
-              >
+              <span className={`status-pill ${report.passed ? "status-pill-active path-ok" : "finding-badge-error"}`}>
                 {report.passed ? "passed" : "failed"}
               </span>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="page-grid-2 panel-section">
               {report.gates.map((gate) => (
-                <article key={gate.id} className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
+                <article key={gate.id} className="finding-card">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="font-medium capitalize">{gate.id}</h4>
-                    <span className={`rounded px-2 py-0.5 text-xs ${statusClass(gate.status)}`}>
-                      {gate.status}
-                    </span>
+                    <span className={`text-xs ${gateStatusClass(gate.status)}`}>{gate.status}</span>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-[var(--color-muted)]">
                     {gate.blocking ? "Blocking gate" : "Report-only gate"}
                   </p>
-                  {gate.message && <p className="mt-2 text-sm text-slate-400">{gate.message}</p>}
-                  <pre className="mt-3 overflow-x-auto rounded-lg bg-[#111831] p-3 text-xs text-slate-400">
-                    {JSON.stringify(gate.summary, null, 2)}
-                  </pre>
+                  {gate.message && <p className="mt-2 text-sm text-[var(--color-muted)]">{gate.message}</p>}
+                  <pre className="code-block mt-3">{JSON.stringify(gate.summary, null, 2)}</pre>
                 </article>
               ))}
             </div>
           </>
         ) : (
-          <p className="text-sm text-slate-400">
+          <p className="panel-subtext">
             No CI pipeline report yet. Run the pipeline from this page or via{" "}
-            <code className="text-slate-200">fdt ci run --workspace &lt;path&gt;</code>.
+            <code className="inline-code">fdt ci run --workspace &lt;path&gt;</code>.
           </p>
         )}
-      </section>
-    </div>
+      </Panel>
+    </PageStack>
   );
 }

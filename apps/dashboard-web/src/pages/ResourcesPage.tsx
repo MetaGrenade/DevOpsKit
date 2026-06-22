@@ -1,4 +1,12 @@
 import { useEffect, useState } from "react";
+import {
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Finding {
@@ -22,14 +30,14 @@ interface ResourceDoctorReport {
   findings: Finding[];
 }
 
-function severityClass(severity: Finding["severity"]): string {
+function findingBadgeClass(severity: Finding["severity"]): string {
   switch (severity) {
     case "error":
-      return "text-rose-300 bg-rose-500/10";
+      return "finding-badge finding-badge-error";
     case "warning":
-      return "text-amber-300 bg-amber-500/10";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -125,35 +133,38 @@ export default function ResourcesPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Resource Report</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Reports load from the active workspace&apos;s{" "}
-              <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/resource-doctor.json</code>
-            </p>
+    <PageStack>
+      <PageIntro
+        title="Resource Report"
+        description={
+          <>
+            Reports load from the active workspace&apos;s{" "}
+            <code className="inline-code">.fdt/reports/resource-doctor.json</code>
             {activeWorkspace && (
-              <p className="mt-2 font-mono text-xs text-cyan-200">{activeWorkspace.directory}</p>
+              <>
+                {" "}
+                · <span className="font-mono text-[var(--color-accent-ink)]">{activeWorkspace.directory}</span>
+              </>
             )}
-          </div>
-          <div className="flex flex-wrap gap-2">
+          </>
+        }
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
             <button
               type="button"
               onClick={() => validateActiveWorkspace().catch(() => setMessage("Validation failed"))}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-100 hover:bg-cyan-500/30"
+              className="btn btn-accent btn-sm"
             >
               Run validation
             </button>
             <button
               type="button"
               onClick={() => refreshReportFromDisk().catch(() => setReportStatus("error"))}
-              className="rounded-lg bg-white/10 px-4 py-2 text-sm text-slate-100 hover:bg-white/15"
+              className="btn btn-secondary btn-sm"
             >
               Refresh from disk
             </button>
-            <label className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 text-sm text-slate-100 hover:bg-white/15">
+            <label className="btn btn-secondary btn-sm cursor-pointer">
               Import JSON
               <input
                 type="file"
@@ -168,106 +179,87 @@ export default function ResourcesPage() {
               />
             </label>
           </div>
-        </div>
+        }
+      />
 
-        {message && <p className="mt-4 text-sm text-cyan-200">{message}</p>}
+      {message && <PageAlert>{message}</PageAlert>}
 
-        {!activeWorkspace && (
-          <p className="mt-4 text-sm text-amber-300">
-            No active workspace selected. Create or select one on the Workspaces page.
-          </p>
-        )}
+      {!activeWorkspace && (
+        <PageAlert variant="warning">
+          No active workspace selected. Create or select one on the Workspaces page.
+        </PageAlert>
+      )}
 
-        {reportStatus === "missing" && activeWorkspace && (
-          <p className="mt-4 text-sm text-slate-400">
-            No report found for the active workspace yet. Click Run validation or refresh after running
-            the CLI against{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5">{activeWorkspace.directory}</code>
-          </p>
-        )}
+      {reportStatus === "missing" && activeWorkspace && (
+        <PageAlert variant="warning">
+          No report found for the active workspace yet. Click Run validation or refresh after running the CLI
+          against <code className="inline-code">{activeWorkspace.directory}</code>
+        </PageAlert>
+      )}
 
-        {reportStatus === "error" && (
-          <p className="mt-4 text-sm text-rose-300">Failed to load or import the report.</p>
-        )}
+      {reportStatus === "error" && (
+        <PageAlert variant="error">Failed to load or import the report.</PageAlert>
+      )}
 
-        {report && reportStatus === "ready" && (
-          <>
-            <div className="mt-6 grid gap-4 sm:grid-cols-4">
-              {[
-                ["Scanned", report.summary.resourcesScanned],
-                ["Errors", report.summary.errors],
-                ["Warnings", report.summary.warnings],
-                ["Passed", report.summary.passed],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-                  <p className="mt-2 text-2xl font-semibold">{value}</p>
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-4 text-xs text-slate-500">
-              {report.workspaceName} · {new Date(report.generatedAt).toLocaleString()}
-            </p>
-          </>
-        )}
-      </div>
-
-      {report && (
+      {report && reportStatus === "ready" && (
         <>
-          <div className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-medium">Findings</h3>
-            <div className="mt-4 space-y-3">
+          <StatGrid columns={4}>
+            <StatTile label="Scanned" value={report.summary.resourcesScanned} />
+            <StatTile label="Errors" value={report.summary.errors} tone="danger" />
+            <StatTile label="Warnings" value={report.summary.warnings} tone="warning" />
+            <StatTile label="Passed" value={report.summary.passed} tone="success" />
+          </StatGrid>
+
+          <p className="panel-subtext">
+            {report.workspaceName} · {new Date(report.generatedAt).toLocaleString()}
+          </p>
+
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Findings</h3>
+            <div className="panel-section space-y-3">
               {report.findings.length === 0 && (
-                <p className="text-sm text-slate-400">No findings reported.</p>
+                <p className="panel-subtext">No findings reported.</p>
               )}
               {report.findings.map((finding) => (
-                <article
-                  key={finding.id}
-                  className="rounded-xl border border-white/10 bg-[#0b1020] p-4"
-                >
+                <article key={finding.id} className="finding-card">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs uppercase ${severityClass(finding.severity)}`}
-                    >
-                      {finding.severity}
-                    </span>
-                    <span className="text-xs text-slate-500">{finding.code}</span>
+                    <span className={findingBadgeClass(finding.severity)}>{finding.severity}</span>
+                    <span className="text-xs text-[var(--color-muted)]">{finding.code}</span>
                     {finding.resource && (
-                      <span className="text-xs text-cyan-300">{finding.resource}</span>
+                      <span className="text-xs text-[var(--color-accent-ink)]">{finding.resource}</span>
                     )}
                   </div>
-                  <p className="mt-2 text-sm text-slate-200">{finding.message}</p>
+                  <p className="mt-2 text-sm">{finding.message}</p>
                 </article>
               ))}
             </div>
-          </div>
+          </Panel>
 
-          <div className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-medium">Resource Inventory</h3>
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="text-xs uppercase text-slate-400">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Resource Inventory</h3>
+            <div className="data-table-wrap">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <th className="pb-2 pr-4">Name</th>
-                    <th className="pb-2 pr-4">Category</th>
-                    <th className="pb-2">Path</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Path</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report.resources.map((resource) => (
-                    <tr key={resource.path} className="border-t border-white/5">
-                      <td className="py-2 pr-4 font-medium">{resource.name}</td>
-                      <td className="py-2 pr-4 text-slate-400">{resource.category ?? "—"}</td>
-                      <td className="py-2 text-slate-400">{resource.path}</td>
+                    <tr key={resource.path}>
+                      <td className="font-medium">{resource.name}</td>
+                      <td className="text-[var(--color-muted)]">{resource.category ?? "—"}</td>
+                      <td className="text-[var(--color-muted)]">{resource.path}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </Panel>
         </>
       )}
-    </section>
+    </PageStack>
   );
 }

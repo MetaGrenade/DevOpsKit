@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 type WorldTab = "blips" | "props" | "doors";
@@ -107,87 +114,86 @@ export default function WorldPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading world records…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading world records…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">World Tools</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage blips, props, and doors.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="World Tools"
+          description="Select an active workspace to manage blips, props, and doors."
+        />
+      </PageStack>
     );
   }
 
-  const items =
-    tab === "blips" ? blips : tab === "props" ? props : doors;
+  const items = tab === "blips" ? blips : tab === "props" ? props : doors;
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">World Tools</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Import in-game exports from <code className="rounded bg-white/5 px-1.5 py-0.5">fdt_devtools</code> into{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/world/</code>. Commands:{" "}
-          <code className="text-slate-200">/fdt_blip</code>,{" "}
-          <code className="text-slate-200">/fdt_prop</code>,{" "}
-          <code className="text-slate-200">/fdt_door</code>.
-        </p>
+    <PageStack>
+      <PageIntro
+        title="World Tools"
+        description={
+          <>
+            Import in-game exports from <code className="inline-code">fdt_devtools</code> into{" "}
+            <code className="inline-code">.fdt/world/</code>. Commands:{" "}
+            <code className="inline-code">/fdt_blip</code>, <code className="inline-code">/fdt_prop</code>,{" "}
+            <code className="inline-code">/fdt_door</code>.
+          </>
+        }
+      />
 
-        <form className="mt-6 space-y-3" onSubmit={handleImport}>
-          <label className="block text-sm">
-            <span className="text-slate-400">Import world export JSON</span>
+      <Panel className="panel-compact">
+        <form className="form-stack" onSubmit={handleImport}>
+          <label className="form-field">
+            <span className="form-label">Import world export JSON</span>
             <textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
               rows={8}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 font-mono text-xs"
-              placeholder='Paste export from /fdt export world JSON'
+              className="form-control form-control-mono"
+              placeholder="Paste export from /fdt export world JSON"
             />
           </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30"
-          >
+          <button type="submit" className="btn btn-accent btn-sm">
             Import
           </button>
         </form>
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
+        {message && <PageAlert>{message}</PageAlert>}
 
-        <div className="mt-6 flex gap-2 text-sm">
+        <div className="tab-row">
           {(["blips", "props", "doors"] as WorldTab[]).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              className={`rounded-lg px-3 py-1.5 capitalize ${
-                tab === value ? "bg-cyan-500/20 text-cyan-200" : "text-slate-400 hover:text-white"
-              }`}
+              className={`tab-btn ${tab === value ? "tab-btn-active" : ""}`}
             >
               {value} ({value === "blips" ? blips.length : value === "props" ? props.length : doors.length})
             </button>
           ))}
         </div>
-      </section>
+      </Panel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="font-semibold capitalize">{tab}</h3>
-        <div className="mt-4 space-y-3">
+      <Panel className="panel-compact">
+        <h3 className="panel-heading capitalize">{tab}</h3>
+        <div className="panel-section space-y-3">
           {items.length === 0 ? (
-            <p className="text-sm text-slate-400">No records yet.</p>
+            <p className="panel-subtext">No records yet.</p>
           ) : (
             items.map((item) => (
-              <article key={item.id} className="rounded-lg border border-white/10 bg-[#0b1020] p-4 text-sm">
-                <div className="font-medium text-cyan-200">{item.label}</div>
-                <div className="mono text-xs text-slate-500">{item.id}</div>
-                {"model" in item && item.model && <div className="text-slate-400">{item.model}</div>}
+              <article key={item.id} className="finding-card text-sm">
+                <div className="font-medium text-[var(--color-accent-ink)]">{item.label}</div>
+                <div className="font-mono text-xs text-[var(--color-muted)]">{item.id}</div>
+                {"model" in item && item.model && <div>{item.model}</div>}
                 {"sprite" in item && (
-                  <div className="text-slate-400">
+                  <div className="text-[var(--color-muted)]">
                     sprite {item.sprite} · ({item.coords.x}, {item.coords.y}, {item.coords.z})
                   </div>
                 )}
@@ -195,7 +201,7 @@ export default function WorldPage() {
             ))
           )}
         </div>
-      </section>
-    </div>
+      </Panel>
+    </PageStack>
   );
 }

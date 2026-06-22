@@ -3,7 +3,6 @@ import type { PageId } from "../../navigation";
 import { findNavItem } from "../../navigation";
 import type { WorkspaceWithConfig } from "../../types/api";
 import { MenuIcon } from "../icons";
-import Badge from "../ui/Badge";
 import ThemeToggle from "../ui/ThemeToggle";
 import Sidebar from "./Sidebar";
 
@@ -17,17 +16,6 @@ interface AppShellProps {
   selectingWorkspaceId: string | null;
   onSelectWorkspace: (id: string) => void;
   children: ReactNode;
-}
-
-function apiBadgeTone(status: AppShellProps["apiStatus"]) {
-  switch (status) {
-    case "online":
-      return "success" as const;
-    case "loading":
-      return "warning" as const;
-    default:
-      return "danger" as const;
-  }
 }
 
 function useStateFromStorage(key: string, defaultValue: boolean) {
@@ -67,7 +55,6 @@ export default function AppShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useStateFromStorage("fdt.sidebar.collapsed", false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const current = findNavItem(page);
-  const activeWorkspace = workspaces.find((workspace) => workspace.id === activeWorkspaceId);
 
   useEffect(() => {
     if (!mobileNavOpen) {
@@ -120,16 +107,7 @@ export default function AppShell({
             </div>
           </div>
           <div className="topbar-right">
-            {activeWorkspace && (
-              <div className="topbar-workspace hidden md:block">
-                <span className="topbar-workspace-label">Workspace</span>
-                <span className="topbar-workspace-value">{activeWorkspace.name}</span>
-              </div>
-            )}
             <ThemeToggle />
-            <Badge tone={apiBadgeTone(apiStatus)} className="hidden sm:inline-flex">
-              API {apiStatus}
-            </Badge>
           </div>
         </header>
 

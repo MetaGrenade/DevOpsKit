@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ResourceSummary {
@@ -53,14 +62,14 @@ function bytesToMb(bytes: number): string {
   return (bytes / (1024 * 1024)).toFixed(2);
 }
 
-function severityClass(severity: Finding["severity"]): string {
+function findingBadgeClass(severity: Finding["severity"]): string {
   switch (severity) {
     case "error":
-      return "text-rose-300 bg-rose-500/10";
+      return "finding-badge finding-badge-error";
     case "warning":
-      return "text-amber-300 bg-amber-500/10";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -114,138 +123,126 @@ export default function AssetsPage() {
   }
 
   if (status === "loading") {
-    return <p className="text-slate-400">Loading asset report…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading asset report…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Asset Auditor</h2>
-        <p className="mt-2 text-sm text-slate-400">Select or register a workspace first.</p>
-      </section>
+      <PageStack>
+        <EmptyState title="Asset Auditor" description="Select or register a workspace first." />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Asset Auditor</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Stream assets for <span className="text-cyan-200">{activeWorkspace.name}</span>
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void runAudit()}
-            className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium hover:bg-cyan-500"
-          >
+    <PageStack>
+      <PageIntro
+        title="Asset Auditor"
+        description={
+          <>
+            Stream assets for{" "}
+            <span className="text-[var(--color-accent-ink)]">{activeWorkspace.name}</span>
+          </>
+        }
+        actions={
+          <button type="button" onClick={() => void runAudit()} className="btn btn-accent btn-sm">
             Run stream audit
           </button>
-        </div>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-            {message}
-          </p>
-        )}
+      {message && <PageAlert>{message}</PageAlert>}
 
-        {status === "missing" && (
-          <p className="mt-4 text-sm text-slate-400">
-            No asset report yet. Run a stream audit or use{" "}
-            <code className="rounded bg-white/5 px-1.5 py-0.5">pnpm fdt audit stream</code>.
-          </p>
-        )}
+      {status === "missing" && (
+        <PageAlert variant="warning">
+          No asset report yet. Run a stream audit or use{" "}
+          <code className="inline-code">pnpm fdt audit stream</code>.
+        </PageAlert>
+      )}
 
-        {report && (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
-              <p className="text-xs uppercase text-slate-500">Assets indexed</p>
-              <p className="mt-1 text-2xl font-semibold">{report.summary.assetsIndexed}</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
-              <p className="text-xs uppercase text-slate-500">Total stream size</p>
-              <p className="mt-1 text-2xl font-semibold">{bytesToMb(report.summary.totalBytes)} MB</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
-              <p className="text-xs uppercase text-slate-500">Duplicate filenames</p>
-              <p className="mt-1 text-2xl font-semibold text-amber-300">
-                {report.summary.duplicateFileNames}
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-[#0b1020] p-4">
-              <p className="text-xs uppercase text-slate-500">Warnings</p>
-              <p className="mt-1 text-2xl font-semibold">{report.summary.warnings}</p>
-            </div>
-          </div>
-        )}
-      </section>
+      {report && (
+        <>
+          <StatGrid columns={4}>
+            <StatTile label="Assets indexed" value={report.summary.assetsIndexed} />
+            <StatTile
+              label="Total stream size"
+              value={`${bytesToMb(report.summary.totalBytes)} MB`}
+            />
+            <StatTile
+              label="Duplicate filenames"
+              value={report.summary.duplicateFileNames}
+              tone="warning"
+            />
+            <StatTile label="Warnings" value={report.summary.warnings} tone="warning" />
+          </StatGrid>
 
-      {report && report.resourceSummaries.length > 0 && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-          <h3 className="font-semibold">Resource size ranking</h3>
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-slate-500">
-                <tr>
-                  <th className="pb-2 pr-4">Resource</th>
-                  <th className="pb-2 pr-4">Assets</th>
-                  <th className="pb-2 pr-4">Total MB</th>
-                  <th className="pb-2">YTD MB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.resourceSummaries.map((summary) => (
-                  <tr key={summary.resource} className="border-t border-white/5">
-                    <td className="py-2 pr-4 text-cyan-100">{summary.resource}</td>
-                    <td className="py-2 pr-4">{summary.assetCount}</td>
-                    <td className="py-2 pr-4">{bytesToMb(summary.totalBytes)}</td>
-                    <td className="py-2">{bytesToMb(summary.ytdBytes)}</td>
-                  </tr>
+          {report.resourceSummaries.length > 0 && (
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Resource size ranking</h3>
+              <div className="data-table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Resource</th>
+                      <th>Assets</th>
+                      <th>Total MB</th>
+                      <th>YTD MB</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.resourceSummaries.map((summary) => (
+                      <tr key={summary.resource}>
+                        <td className="text-[var(--color-accent-ink)]">{summary.resource}</td>
+                        <td>{summary.assetCount}</td>
+                        <td>{bytesToMb(summary.totalBytes)}</td>
+                        <td>{bytesToMb(summary.ytdBytes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          )}
+
+          {report.duplicateGroups.length > 0 && (
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Duplicate filenames</h3>
+              <ul className="list-plain panel-section space-y-3">
+                {report.duplicateGroups.map((group) => (
+                  <li key={group.fileName} className="alert alert-warning">
+                    <p className="font-medium">{group.fileName}</p>
+                    <ul className="list-plain mt-2 text-sm">
+                      {group.occurrences.map((occurrence) => (
+                        <li key={occurrence.id}>
+                          {occurrence.resource}/{occurrence.relativePath}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+              </ul>
+            </Panel>
+          )}
 
-      {report && report.duplicateGroups.length > 0 && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-          <h3 className="font-semibold">Duplicate filenames</h3>
-          <ul className="mt-4 space-y-4">
-            {report.duplicateGroups.map((group) => (
-              <li key={group.fileName} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-                <p className="font-medium text-amber-200">{group.fileName}</p>
-                <ul className="mt-2 space-y-1 text-sm text-slate-300">
-                  {group.occurrences.map((occurrence) => (
-                    <li key={occurrence.id}>
-                      {occurrence.resource}/{occurrence.relativePath}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </section>
+          {report.findings.length > 0 && (
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Findings</h3>
+              <ul className="list-plain panel-section space-y-2">
+                {report.findings.map((finding) => (
+                  <li key={finding.id} className={`finding-card ${findingBadgeClass(finding.severity)}`}>
+                    {finding.resource ? `[${finding.resource}] ` : ""}
+                    {finding.message}
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+        </>
       )}
-
-      {report && report.findings.length > 0 && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-          <h3 className="font-semibold">Findings</h3>
-          <ul className="mt-4 space-y-2">
-            {report.findings.map((finding) => (
-              <li
-                key={finding.id}
-                className={`rounded-lg px-3 py-2 text-sm ${severityClass(finding.severity)}`}
-              >
-                {finding.resource ? `[${finding.resource}] ` : ""}
-                {finding.message}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </div>
+    </PageStack>
   );
 }

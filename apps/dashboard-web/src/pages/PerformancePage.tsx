@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface PerformanceResourceMetric {
@@ -46,14 +55,14 @@ interface PerformanceComparisonReport {
   changes: PerformanceComparisonChange[];
 }
 
-function directionClass(direction: string): string {
+function directionBadgeClass(direction: string): string {
   switch (direction) {
     case "regression":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "improvement":
-      return "text-emerald-200 bg-emerald-500/15";
+      return "finding-badge finding-badge-info path-ok";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -186,59 +195,61 @@ export default function PerformancePage() {
   }
 
   if (status === "loading") {
-    return <p className="text-sm text-slate-400">Loading performance snapshots…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading performance snapshots…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Performance Dashboard</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to track profiler snapshots.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Performance Dashboard"
+          description="Select an active workspace to track profiler snapshots."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Performance Dashboard</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Import profiler snapshots into{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/performance/snapshots.json</code>,
-          compare releases, and review regression reports in{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/performance-comparison.json</code>.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI:{" "}
-          <code className="text-slate-200">fdt perf import snapshot.json</code> ·{" "}
-          <code className="text-slate-200">fdt perf compare --from baseline --to target</code> ·{" "}
-          <code className="text-slate-200">fdt perf report</code>
-        </p>
+    <PageStack>
+      <PageIntro
+        title="Performance Dashboard"
+        description={
+          <>
+            Import profiler snapshots into{" "}
+            <code className="inline-code">.fdt/performance/snapshots.json</code>, compare releases, and
+            review regression reports in{" "}
+            <code className="inline-code">.fdt/reports/performance-comparison.json</code>.
+          </>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt perf import snapshot.json</code> ·{" "}
+          <code className="inline-code">fdt perf compare --from baseline --to target</code> ·{" "}
+          <code className="inline-code">fdt perf report</code>
+        </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Snapshots ({snapshots.length})</h3>
-          <div className="mt-4 space-y-2">
+      <div className="page-grid-2">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Snapshots ({snapshots.length})</h3>
+          <div className="panel-section space-y-2">
             {snapshots.length === 0 ? (
-              <p className="text-sm text-slate-400">No snapshots imported yet.</p>
+              <p className="panel-subtext">No snapshots imported yet.</p>
             ) : (
               snapshots.map((snapshot) => (
-                <article
-                  key={snapshot.id}
-                  className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm"
-                >
-                  <div className="font-medium text-cyan-200">
+                <article key={snapshot.id} className="finding-card">
+                  <div className="font-medium text-[var(--color-accent-ink)]">
                     {snapshot.label ?? snapshot.id}
                     {snapshot.releaseVersion ? ` · ${snapshot.releaseVersion}` : ""}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-[var(--color-muted)]">
                     {snapshot.environment} · {new Date(snapshot.capturedAt).toLocaleString()} ·{" "}
                     {snapshot.resources.length} resources
                   </div>
@@ -247,34 +258,34 @@ export default function PerformancePage() {
             )}
           </div>
 
-          <form className="mt-6 space-y-3" onSubmit={handleImport}>
-            <h4 className="font-medium">Import snapshot JSON</h4>
+          <form className="form-stack panel-section" onSubmit={handleImport}>
+            <h4 className="panel-heading">Import snapshot JSON</h4>
             <textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
               rows={6}
               placeholder='{"id":"perf_001","capturedAt":"...","resources":[{"resource":"meta_inventory","avgMs":0.4}]}'
-              className="w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 font-mono text-xs"
+              className="form-control form-control-mono"
             />
             <button
               type="submit"
               disabled={busy || !importJson.trim()}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50"
+              className="btn btn-accent btn-sm"
             >
               Import snapshot
             </button>
           </form>
-        </section>
+        </Panel>
 
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Compare snapshots</h3>
-          <form className="mt-4 space-y-3 text-sm" onSubmit={handleCompare}>
-            <label className="block">
-              <span className="text-slate-400">Baseline</span>
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Compare snapshots</h3>
+          <form className="form-stack panel-section" onSubmit={handleCompare}>
+            <label className="form-field">
+              <span className="form-label">Baseline</span>
               <select
                 value={baselineId}
                 onChange={(e) => setBaselineId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 <option value="">Select baseline</option>
                 {snapshots.map((snapshot) => (
@@ -284,12 +295,12 @@ export default function PerformancePage() {
                 ))}
               </select>
             </label>
-            <label className="block">
-              <span className="text-slate-400">Target</span>
+            <label className="form-field">
+              <span className="form-label">Target</span>
               <select
                 value={targetId}
                 onChange={(e) => setTargetId(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 <option value="">Select target</option>
                 {snapshots.map((snapshot) => (
@@ -299,77 +310,68 @@ export default function PerformancePage() {
                 ))}
               </select>
             </label>
-            <label className="block">
-              <span className="text-slate-400">Threshold (%)</span>
+            <label className="form-field">
+              <span className="form-label">Threshold (%)</span>
               <input
                 type="number"
                 min={0}
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               />
             </label>
             <button
               type="submit"
               disabled={busy || !baselineId || !targetId}
-              className="rounded-lg bg-emerald-500/20 px-4 py-2 font-medium text-emerald-200 hover:bg-emerald-500/30 disabled:opacity-50"
+              className="btn btn-primary btn-sm"
             >
               Run comparison
             </button>
           </form>
 
           {report && (
-            <div className="mt-6">
-              <h4 className="font-medium">Latest comparison</h4>
-              <p className="mt-1 text-xs text-slate-500">
+            <div className="panel-section">
+              <h4 className="panel-heading">Latest comparison</h4>
+              <p className="panel-subtext">
                 {report.baselineLabel ?? report.baselineSnapshotId} →{" "}
                 {report.targetLabel ?? report.targetSnapshotId}
                 {reportPath ? ` · ${reportPath}` : ""}
               </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-                  <div className="text-xs text-slate-500">Regressions</div>
-                  <div className="text-xl font-semibold text-rose-300">{report.summary.regressions}</div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-                  <div className="text-xs text-slate-500">Improvements</div>
-                  <div className="text-xl font-semibold text-emerald-300">{report.summary.improvements}</div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-                  <div className="text-xs text-slate-500">Unchanged</div>
-                  <div className="text-xl font-semibold text-slate-200">{report.summary.unchanged}</div>
-                </div>
-              </div>
+              <StatGrid columns={3}>
+                <StatTile label="Regressions" value={report.summary.regressions} tone="danger" />
+                <StatTile label="Improvements" value={report.summary.improvements} tone="success" />
+                <StatTile label="Unchanged" value={report.summary.unchanged} tone="muted" />
+              </StatGrid>
             </div>
           )}
-        </section>
+        </Panel>
       </div>
 
       {report && report.changes.length > 0 && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Metric changes</h3>
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="text-xs uppercase tracking-wide text-slate-500">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Metric changes</h3>
+          <div className="data-table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="px-3 py-2">Resource</th>
-                  <th className="px-3 py-2">Metric</th>
-                  <th className="px-3 py-2">Baseline</th>
-                  <th className="px-3 py-2">Target</th>
-                  <th className="px-3 py-2">Change</th>
-                  <th className="px-3 py-2">Direction</th>
+                  <th>Resource</th>
+                  <th>Metric</th>
+                  <th>Baseline</th>
+                  <th>Target</th>
+                  <th>Change</th>
+                  <th>Direction</th>
                 </tr>
               </thead>
               <tbody>
                 {report.changes.map((change) => (
-                  <tr key={`${change.resource}-${change.metric}`} className="border-t border-white/5">
-                    <td className="px-3 py-2 text-cyan-200">{change.resource}</td>
-                    <td className="px-3 py-2">{change.metric}</td>
-                    <td className="px-3 py-2">{change.baselineValue}</td>
-                    <td className="px-3 py-2">{change.targetValue}</td>
-                    <td className="px-3 py-2">{change.changePercent}%</td>
-                    <td className="px-3 py-2">
-                      <span className={`rounded px-2 py-0.5 text-xs ${directionClass(change.direction)}`}>
+                  <tr key={`${change.resource}-${change.metric}`}>
+                    <td className="text-[var(--color-accent-ink)]">{change.resource}</td>
+                    <td>{change.metric}</td>
+                    <td>{change.baselineValue}</td>
+                    <td>{change.targetValue}</td>
+                    <td>{change.changePercent}%</td>
+                    <td>
+                      <span className={`text-xs ${directionBadgeClass(change.direction)}`}>
                         {change.direction}
                       </span>
                     </td>
@@ -378,8 +380,8 @@ export default function PerformancePage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Vehicle {
@@ -31,14 +38,14 @@ interface VehicleReport {
   findings: VehicleFinding[];
 }
 
-function severityClass(severity: string): string {
+function severityBadgeClass(severity: string): string {
   switch (severity) {
     case "error":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "warning":
-      return "text-amber-200 bg-amber-500/15";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -138,66 +145,84 @@ export default function VehiclesPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading vehicles…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading vehicles…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Vehicle Pack Builder</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage vehicle packs.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Vehicle Pack Builder"
+          description="Select an active workspace to manage vehicle packs."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Vehicle Pack Builder</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Scan add-on vehicle resources, validate spawn names and meta files, compare handling profiles, and export
-          Qbox vehicle shop catalogs.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI: <code className="text-slate-200">fdt vehicle scan</code> ·{" "}
-          <code className="text-slate-200">fdt vehicle audit</code> ·{" "}
-          <code className="text-slate-200">fdt vehicle export --adapter qbox</code>
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button type="button" disabled={busy} onClick={() => void runScan()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            {busy ? "Working…" : "Scan vehicles"}
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runAudit()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            Run audit
-          </button>
-        </div>
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">{message}</p>}
-      </section>
+    <PageStack>
+      <PageIntro
+        title="Vehicle Pack Builder"
+        description="Scan add-on vehicle resources, validate spawn names and meta files, compare handling profiles, and export Qbox vehicle shop catalogs."
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button type="button" disabled={busy} onClick={() => void runScan()} className="btn btn-accent btn-sm">
+              {busy ? "Working…" : "Scan vehicles"}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void runAudit()} className="btn btn-secondary btn-sm">
+              Run audit
+            </button>
+          </div>
+        }
+      />
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">Handling comparison</h3>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <input value={compareForm.baseline} onChange={(e) => setCompareForm({ ...compareForm, baseline: e.target.value })} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm" placeholder="Baseline spawn" />
-          <input value={compareForm.target} onChange={(e) => setCompareForm({ ...compareForm, target: e.target.value })} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm" placeholder="Target spawn" />
-          <button type="button" disabled={busy} onClick={() => void runCompare()} className="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-50">
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt vehicle scan</code> ·{" "}
+          <code className="inline-code">fdt vehicle audit</code> ·{" "}
+          <code className="inline-code">fdt vehicle export --adapter qbox</code>
+        </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
+
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Handling comparison</h3>
+        <div className="btn-row panel-section">
+          <input
+            value={compareForm.baseline}
+            onChange={(e) => setCompareForm({ ...compareForm, baseline: e.target.value })}
+            className="form-control"
+            placeholder="Baseline spawn"
+          />
+          <input
+            value={compareForm.target}
+            onChange={(e) => setCompareForm({ ...compareForm, target: e.target.value })}
+            className="form-control"
+            placeholder="Target spawn"
+          />
+          <button type="button" disabled={busy} onClick={() => void runCompare()} className="btn btn-secondary btn-sm">
             Compare
           </button>
         </div>
         {comparison && (
-          <pre className="mt-4 overflow-x-auto rounded-lg bg-[#0b1020] p-3 text-xs text-slate-400">{JSON.stringify(comparison, null, 2)}</pre>
+          <pre className="code-block panel-section">{JSON.stringify(comparison, null, 2)}</pre>
         )}
-      </section>
+      </Panel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">Vehicle registry ({vehicles.length})</h3>
-        <div className="mt-4 space-y-2">
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Vehicle registry ({vehicles.length})</h3>
+        <div className="panel-section space-y-2">
           {vehicles.length === 0 ? (
-            <p className="text-sm text-slate-400">No vehicles registered yet. Run a scan to index vehicle resources.</p>
+            <p className="panel-subtext">No vehicles registered yet. Run a scan to index vehicle resources.</p>
           ) : (
             vehicles.map((vehicle) => (
-              <article key={vehicle.spawnName} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={vehicle.spawnName} className="finding-card text-sm">
                 <div className="font-medium">{vehicle.displayName}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-[var(--color-muted)]">
                   {vehicle.spawnName} · {vehicle.category}
                   {vehicle.shop ? ` · ${vehicle.shop}` : ""}
                   {vehicle.emergency ? " · emergency" : ""}
@@ -206,27 +231,27 @@ export default function VehiclesPage() {
             ))
           )}
         </div>
-      </section>
+      </Panel>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="text-lg font-semibold">Audit findings</h3>
-          <p className="mt-1 text-sm text-slate-400">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Audit findings</h3>
+          <p className="panel-subtext">
             {report.summary.errors} errors · {report.summary.warnings} warnings · {report.summary.info} info
           </p>
-          <div className="mt-4 space-y-2">
+          <div className="panel-section space-y-2">
             {report.findings.slice(0, 12).map((finding) => (
-              <article key={finding.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={finding.id} className="finding-card text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">{finding.code}</span>
-                  <span className={`rounded px-2 py-0.5 text-xs ${severityClass(finding.severity)}`}>{finding.severity}</span>
+                  <span className={`text-xs ${severityBadgeClass(finding.severity)}`}>{finding.severity}</span>
                 </div>
-                <p className="mt-1 text-slate-400">{finding.message}</p>
+                <p className="mt-1 text-[var(--color-muted)]">{finding.message}</p>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

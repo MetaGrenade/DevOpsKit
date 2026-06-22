@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Vehicle {
@@ -274,120 +281,121 @@ export default function DomainsPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading domain builders…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading domain builders…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Domain Builders</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage vehicles, businesses, and maps.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Domain Builders"
+          description="Select an active workspace to manage vehicles, businesses, and maps."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Domain Builders</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Manage vehicles, businesses, jobs, gangs, and map/MLO release checklists derived from devtools zones.
-          Export through custom-json or QBCore adapters to{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/exports/</code>.
-        </p>
+    <PageStack>
+      <PageIntro
+        title="Domain Builders"
+        description={
+          <>
+            Manage vehicles, businesses, jobs, gangs, and map/MLO release checklists derived from devtools zones.
+            Export through custom-json or QBCore adapters to{" "}
+            <code className="inline-code">.fdt/exports/</code>.
+          </>
+        }
+      />
 
-        <div className="mt-4 flex flex-wrap gap-2">
+      <Panel className="panel-compact">
+        <div className="tab-row">
           {(["vehicles", "businesses", "jobs", "gangs", "maps"] as Tab[]).map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setTab(item)}
-              className={`rounded-lg px-3 py-1.5 text-sm capitalize ${
-                tab === item ? "bg-cyan-500/20 text-cyan-200" : "text-slate-400 hover:text-white"
-              }`}
+              className={`tab-btn capitalize ${tab === item ? "tab-btn-active" : ""}`}
             >
               {item}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => void previewExport()}
-            className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-sm text-emerald-200 hover:bg-emerald-500/25"
-          >
+          <button type="button" onClick={() => void previewExport()} className="btn btn-secondary btn-sm">
             Preview export
           </button>
         </div>
-
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
 
       {tab === "vehicles" && (
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Add Vehicle</h3>
-            <form className="mt-4 space-y-3 text-sm" onSubmit={saveVehicle}>
-              <label className="block">
-                <span className="text-slate-400">Spawn name</span>
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Add Vehicle</h3>
+            <form className="form-stack panel-section" onSubmit={saveVehicle}>
+              <label className="form-field">
+                <span className="form-label">Spawn name</span>
                 <input
                   required
                   value={vehicleForm.spawnName}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, spawnName: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Display name</span>
+              <label className="form-field">
+                <span className="form-label">Display name</span>
                 <input
                   required
                   value={vehicleForm.displayName}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, displayName: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Category</span>
+              <label className="form-field">
+                <span className="form-label">Category</span>
                 <input
                   value={vehicleForm.category}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, category: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <button type="submit" className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200">
+              <button type="submit" className="btn btn-accent btn-sm">
                 Save vehicle
               </button>
             </form>
-          </section>
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Vehicle Registry ({vehicles.length})</h3>
-            <div className="mt-3 space-y-2">
+          </Panel>
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Vehicle Registry ({vehicles.length})</h3>
+            <div className="panel-section space-y-2">
               {vehicles.map((vehicle) => (
-                <article key={vehicle.spawnName} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+                <article key={vehicle.spawnName} className="finding-card text-sm">
                   <div className="font-medium">{vehicle.displayName}</div>
-                  <div className="text-xs text-slate-500">{vehicle.spawnName} · {vehicle.category}</div>
+                  <div className="text-xs text-[var(--color-muted)]">
+                    {vehicle.spawnName} · {vehicle.category}
+                  </div>
                 </article>
               ))}
             </div>
-          </section>
+          </Panel>
         </div>
       )}
 
       {tab === "businesses" && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Businesses from Zones</h3>
-          <p className="mt-2 text-sm text-slate-400">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Businesses from Zones</h3>
+          <p className="panel-subtext">
             Import a zone exported from the devtools overlay to create a business location record.
           </p>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="text-sm">
-              <span className="text-slate-400">Zone</span>
+          <div className="btn-row panel-section">
+            <label className="form-field">
+              <span className="form-label">Zone</span>
               <select
                 value={selectedZoneId}
                 onChange={(e) => setSelectedZoneId(e.target.value)}
-                className="mt-1 block rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 {zones.map((zone) => (
                   <option key={zone.id} value={zone.id}>
@@ -399,38 +407,38 @@ export default function DomainsPage() {
             <button
               type="button"
               onClick={() => void createBusinessFromZone()}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200"
+              className="btn btn-accent btn-sm"
             >
               Create business from zone
             </button>
           </div>
-          <div className="mt-6 space-y-2">
+          <div className="panel-section space-y-2">
             {businesses.map((business) => (
-              <article key={business.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={business.id} className="finding-card text-sm">
                 <div className="font-medium">{business.label}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-[var(--color-muted)]">
                   {business.id} · {business.type}
                   {business.zoneId ? ` · zone ${business.zoneId}` : ""}
                 </div>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
 
       {tab === "jobs" && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Jobs from Zones</h3>
-          <p className="mt-2 text-sm text-slate-400">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Jobs from Zones</h3>
+          <p className="panel-subtext">
             Create a job record with a default grade and duty location from a devtools zone export.
           </p>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="text-sm">
-              <span className="text-slate-400">Zone</span>
+          <div className="btn-row panel-section">
+            <label className="form-field">
+              <span className="form-label">Zone</span>
               <select
                 value={selectedZoneId}
                 onChange={(e) => setSelectedZoneId(e.target.value)}
-                className="mt-1 block rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 {zones.map((zone) => (
                   <option key={zone.id} value={zone.id}>
@@ -439,41 +447,37 @@ export default function DomainsPage() {
                 ))}
               </select>
             </label>
-            <button
-              type="button"
-              onClick={() => void createJobFromZone()}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200"
-            >
+            <button type="button" onClick={() => void createJobFromZone()} className="btn btn-accent btn-sm">
               Create job from zone
             </button>
           </div>
-          <div className="mt-6 space-y-2">
+          <div className="panel-section space-y-2">
             {jobs.map((job) => (
-              <article key={job.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={job.id} className="finding-card text-sm">
                 <div className="font-medium">{job.label}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-[var(--color-muted)]">
                   {job.id} · {job.type} · {job.grades.length} grades
                   {job.zoneId ? ` · zone ${job.zoneId}` : ""}
                 </div>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
 
       {tab === "gangs" && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Gangs & Territories from Zones</h3>
-          <p className="mt-2 text-sm text-slate-400">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Gangs & Territories from Zones</h3>
+          <p className="panel-subtext">
             Build gang or territory records from territory-purpose zones exported in-game.
           </p>
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="text-sm">
-              <span className="text-slate-400">Zone</span>
+          <div className="btn-row panel-section">
+            <label className="form-field">
+              <span className="form-label">Zone</span>
               <select
                 value={selectedZoneId}
                 onChange={(e) => setSelectedZoneId(e.target.value)}
-                className="mt-1 block rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 {zones.map((zone) => (
                   <option key={zone.id} value={zone.id}>
@@ -482,66 +486,83 @@ export default function DomainsPage() {
                 ))}
               </select>
             </label>
-            <button
-              type="button"
-              onClick={() => void createGangFromZone()}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200"
-            >
+            <button type="button" onClick={() => void createGangFromZone()} className="btn btn-accent btn-sm">
               Create gang from zone
             </button>
           </div>
-          <div className="mt-6 space-y-2">
+          <div className="panel-section space-y-2">
             {gangs.map((gang) => (
-              <article key={gang.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={gang.id} className="finding-card text-sm">
                 <div className="font-medium">{gang.label}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-[var(--color-muted)]">
                   {gang.id} · {gang.type} · {gang.territoryIds.length} territories
                 </div>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
 
       {tab === "maps" && (
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">New Map Package</h3>
-            <form className="mt-4 space-y-3 text-sm" onSubmit={createMap}>
-              <label className="block">
-                <span className="text-slate-400">ID</span>
-                <input required value={mapForm.id} onChange={(e) => setMapForm({ ...mapForm, id: e.target.value })} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2" />
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">New Map Package</h3>
+            <form className="form-stack panel-section" onSubmit={createMap}>
+              <label className="form-field">
+                <span className="form-label">ID</span>
+                <input
+                  required
+                  value={mapForm.id}
+                  onChange={(e) => setMapForm({ ...mapForm, id: e.target.value })}
+                  className="form-control"
+                />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Label</span>
-                <input required value={mapForm.label} onChange={(e) => setMapForm({ ...mapForm, label: e.target.value })} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2" />
+              <label className="form-field">
+                <span className="form-label">Label</span>
+                <input
+                  required
+                  value={mapForm.label}
+                  onChange={(e) => setMapForm({ ...mapForm, label: e.target.value })}
+                  className="form-control"
+                />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Resource name</span>
-                <input required value={mapForm.resourceName} onChange={(e) => setMapForm({ ...mapForm, resourceName: e.target.value })} className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2" />
+              <label className="form-field">
+                <span className="form-label">Resource name</span>
+                <input
+                  required
+                  value={mapForm.resourceName}
+                  onChange={(e) => setMapForm({ ...mapForm, resourceName: e.target.value })}
+                  className="form-control"
+                />
               </label>
-              <button type="submit" className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200">
+              <button type="submit" className="btn btn-accent btn-sm">
                 Create checklist
               </button>
             </form>
-          </section>
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Map Packages ({maps.length})</h3>
-            <div className="mt-3 space-y-4">
+          </Panel>
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Map Packages ({maps.length})</h3>
+            <div className="panel-section space-y-3">
               {maps.map((mapPackage) => (
-                <article key={mapPackage.id} className="rounded-lg border border-white/10 bg-[#0b1020] p-4 text-sm">
+                <article key={mapPackage.id} className="finding-card text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <div className="font-medium">{mapPackage.label}</div>
-                      <div className="text-xs text-slate-500">{mapPackage.resourceName} · {mapPackage.status}</div>
+                      <div className="text-xs text-[var(--color-muted)]">
+                        {mapPackage.resourceName} · {mapPackage.status}
+                      </div>
                     </div>
-                    <button type="button" onClick={() => void refreshChecklist(mapPackage.id)} className="text-xs text-cyan-300">
+                    <button
+                      type="button"
+                      onClick={() => void refreshChecklist(mapPackage.id)}
+                      className="btn btn-secondary btn-sm"
+                    >
                       Refresh checklist
                     </button>
                   </div>
-                  <ul className="mt-3 space-y-1 text-xs text-slate-400">
+                  <ul className="list-plain mt-2 text-xs text-[var(--color-muted)]">
                     {mapPackage.checklist.map((item) => (
-                      <li key={item.id}>
+                      <li key={item.id} className={item.passed ? "path-ok" : ""}>
                         [{item.passed ? "x" : " "}] {item.label}
                       </li>
                     ))}
@@ -549,23 +570,21 @@ export default function DomainsPage() {
                 </article>
               ))}
             </div>
-          </section>
+          </Panel>
         </div>
       )}
 
       {exportPreview && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Export Preview</h3>
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Export Preview</h3>
           {exportPreview.map((file) => (
-            <div key={file.relativePath} className="mt-4">
-              <h4 className="text-sm text-cyan-200">{file.relativePath}</h4>
-              <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-[#0b1020] p-4 text-xs text-slate-300">
-                {file.content}
-              </pre>
+            <div key={file.relativePath} className="panel-section">
+              <h4 className="text-sm font-medium text-[var(--color-accent-ink)]">{file.relativePath}</h4>
+              <pre className="code-block mt-2">{file.content}</pre>
             </div>
           ))}
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

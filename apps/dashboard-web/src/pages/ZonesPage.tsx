@@ -1,4 +1,12 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  NotePanel,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ZoneCoord {
@@ -154,102 +162,100 @@ export default function ZonesPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading zones…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading zones…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Zones</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage zones.</p>
-      </section>
+      <PageStack>
+        <EmptyState title="Zones" description="Select an active workspace to manage zones." />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Zone Registry</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Neutral zone records stored at{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/zones/zones.json</code>. Create
-          zones in-game with the{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">fdt_devtools</code> resource and import
-          the exported JSON here, or add zones manually.
-        </p>
+    <PageStack>
+      <PageIntro
+        title="Zone Registry"
+        description={
+          <>
+            Neutral zone records stored at <code className="inline-code">.fdt/zones/zones.json</code>. Create zones
+            in-game with the <code className="inline-code">fdt_devtools</code> resource and import the exported JSON
+            here, or add zones manually.
+          </>
+        }
+      />
 
-        <div className="mt-4 rounded-xl border border-dashed border-cyan-500/20 bg-cyan-500/5 p-4 text-sm text-slate-300">
-          <p className="font-medium text-cyan-200">In-game setup</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-400">
-            <li>
-              Copy <code className="text-slate-200">resources/fdt_devtools</code> into your server
-              resources folder.
-            </li>
-            <li>
-              Grant ACE permission:{" "}
-              <code className="text-slate-200">add_ace group.admin fdt.devtools allow</code>
-            </li>
-            <li>
-              Set <code className="text-slate-200">Config.PostToDashboard = true</code> and{" "}
-              <code className="text-slate-200">Config.DashboardImportUrl</code> to{" "}
-              <code className="text-slate-200">http://127.0.0.1:3001/api/v1/zones/import</code>
-            </li>
-            <li>Use <code className="text-slate-200">/fdt</code> in-game to open the overlay.</li>
-          </ol>
-        </div>
+      <NotePanel title="In-game setup">
+        <ol>
+          <li>
+            Copy <code className="inline-code">resources/fdt_devtools</code> into your server resources folder.
+          </li>
+          <li>
+            Grant ACE permission: <code className="inline-code">add_ace group.admin fdt.devtools allow</code>
+          </li>
+          <li>
+            Set <code className="inline-code">Config.PostToDashboard = true</code> and{" "}
+            <code className="inline-code">Config.DashboardImportUrl</code> to{" "}
+            <code className="inline-code">http://127.0.0.1:3001/api/v1/zones/import</code>
+          </li>
+          <li>
+            Use <code className="inline-code">/fdt</code> in-game to open the overlay.
+          </li>
+        </ol>
+      </NotePanel>
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
+      {message && <PageAlert>{message}</PageAlert>}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Add / Update Zone</h3>
-          <form className="mt-4 space-y-3 text-sm" onSubmit={handleSaveZone}>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-slate-400">ID</span>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Add / Update Zone</h3>
+          <form className="form-stack panel-section" onSubmit={handleSaveZone}>
+            <div className="form-grid form-grid-2">
+              <label className="form-field">
+                <span className="form-label">ID</span>
                 <input
                   required
                   value={form.id}
                   onChange={(e) => setForm({ ...form, id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                   placeholder="shop_downtown"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Label</span>
+              <label className="form-field">
+                <span className="form-label">Label</span>
                 <input
                   required
                   value={form.label}
                   onChange={(e) => setForm({ ...form, label: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-slate-400">Type</span>
+            <div className="form-grid form-grid-2">
+              <label className="form-field">
+                <span className="form-label">Type</span>
                 <select
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value as Zone["type"] })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 >
                   <option value="sphere">sphere</option>
                   <option value="box">box</option>
                   <option value="poly">poly</option>
                 </select>
               </label>
-              <label className="block">
-                <span className="text-slate-400">Purpose</span>
+              <label className="form-field">
+                <span className="form-label">Purpose</span>
                 <select
                   value={form.purpose}
                   onChange={(e) => setForm({ ...form, purpose: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 >
                   {["shop", "stash", "garage", "interaction", "territory", "job", "event", "custom"].map(
                     (purpose) => (
@@ -262,127 +268,120 @@ export default function ZonesPage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="form-grid form-grid-3">
               {(["x", "y", "z"] as const).map((axis) => (
-                <label key={axis} className="block">
-                  <span className="text-slate-400 uppercase">{axis}</span>
+                <label key={axis} className="form-field">
+                  <span className="form-label uppercase">{axis}</span>
                   <input
                     required
                     value={form[axis]}
                     onChange={(e) => setForm({ ...form, [axis]: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   />
                 </label>
               ))}
             </div>
 
             {form.type === "sphere" && (
-              <label className="block">
-                <span className="text-slate-400">Radius</span>
+              <label className="form-field">
+                <span className="form-label">Radius</span>
                 <input
                   value={form.radius}
                   onChange={(e) => setForm({ ...form, radius: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
             )}
 
             {form.type === "box" && (
-              <div className="grid grid-cols-3 gap-3">
-                <label className="block">
-                  <span className="text-slate-400">Width</span>
+              <div className="form-grid form-grid-3">
+                <label className="form-field">
+                  <span className="form-label">Width</span>
                   <input
                     value={form.width}
                     onChange={(e) => setForm({ ...form, width: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   />
                 </label>
-                <label className="block">
-                  <span className="text-slate-400">Length</span>
+                <label className="form-field">
+                  <span className="form-label">Length</span>
                   <input
                     value={form.length}
                     onChange={(e) => setForm({ ...form, length: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   />
                 </label>
-                <label className="block">
-                  <span className="text-slate-400">Heading</span>
+                <label className="form-field">
+                  <span className="form-label">Heading</span>
                   <input
                     value={form.heading}
                     onChange={(e) => setForm({ ...form, heading: e.target.value })}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                    className="form-control"
                   />
                 </label>
               </div>
             )}
 
-            <button
-              type="submit"
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200 hover:bg-cyan-500/30"
-            >
+            <button type="submit" className="btn btn-accent btn-sm">
               Save zone
             </button>
           </form>
-        </section>
+        </Panel>
 
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Import from DevTools</h3>
-          <p className="mt-2 text-sm text-slate-400">
-            Paste JSON exported from <code className="text-slate-200">/fdt</code> or saved export
-            files.
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Import from DevTools</h3>
+          <p className="panel-subtext">
+            Paste JSON exported from <code className="inline-code">/fdt</code> or saved export files.
           </p>
-          <form className="mt-4 space-y-3" onSubmit={handleImport}>
+          <form className="form-stack panel-section" onSubmit={handleImport}>
             <textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
               rows={10}
               placeholder='{"schemaVersion":1,"resource":"fdt_devtools","zones":[...]}'
-              className="w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 font-mono text-xs text-slate-200"
+              className="form-control font-mono text-xs"
             />
-            <button
-              type="submit"
-              className="rounded-lg bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-emerald-500/30"
-            >
+            <button type="submit" className="btn btn-secondary btn-sm">
               Import JSON
             </button>
           </form>
-        </section>
+        </Panel>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="font-semibold">Registered Zones ({zones.length})</h3>
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Registered Zones ({zones.length})</h3>
         {zones.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-400">No zones yet.</p>
+          <p className="panel-subtext panel-section">No zones yet.</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs uppercase text-slate-500">
+          <div className="panel-section data-table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <th className="pb-2 pr-4">ID</th>
-                  <th className="pb-2 pr-4">Label</th>
-                  <th className="pb-2 pr-4">Type</th>
-                  <th className="pb-2 pr-4">Purpose</th>
-                  <th className="pb-2 pr-4">Coords</th>
-                  <th className="pb-2">Actions</th>
+                  <th>ID</th>
+                  <th>Label</th>
+                  <th>Type</th>
+                  <th>Purpose</th>
+                  <th>Coords</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {zones.map((zone) => (
-                  <tr key={zone.id} className="border-t border-white/5">
-                    <td className="py-3 pr-4 font-mono text-xs text-cyan-200">{zone.id}</td>
-                    <td className="py-3 pr-4">{zone.label}</td>
-                    <td className="py-3 pr-4">{zone.type}</td>
-                    <td className="py-3 pr-4">{zone.purpose}</td>
-                    <td className="py-3 pr-4 font-mono text-xs text-slate-400">
+                  <tr key={zone.id}>
+                    <td className="font-mono text-xs text-[var(--color-accent-ink)]">{zone.id}</td>
+                    <td>{zone.label}</td>
+                    <td>{zone.type}</td>
+                    <td>{zone.purpose}</td>
+                    <td className="font-mono text-xs text-[var(--color-muted)]">
                       {zone.coords
                         .map((coord) => `${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}, ${coord.z.toFixed(2)}`)
                         .join(" · ")}
                     </td>
-                    <td className="py-3">
+                    <td>
                       <button
                         type="button"
                         onClick={() => void handleDeleteZone(zone.id)}
-                        className="text-xs text-rose-300 hover:text-rose-200"
+                        className="btn btn-secondary btn-sm"
                       >
                         Delete
                       </button>
@@ -393,7 +392,7 @@ export default function ZonesPage() {
             </table>
           </div>
         )}
-      </section>
-    </div>
+      </Panel>
+    </PageStack>
   );
 }

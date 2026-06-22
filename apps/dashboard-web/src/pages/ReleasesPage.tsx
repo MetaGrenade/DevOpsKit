@@ -1,4 +1,14 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  NotePanel,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ReleaseValidationSummary {
@@ -111,6 +121,25 @@ const STATUS_OPTIONS = [
   "deployed",
   "rolled-back",
 ] as const;
+
+function checklistStatusClass(status: ReleaseChecklistItem["status"]): string {
+  switch (status) {
+    case "passed":
+      return "path-ok";
+    case "failed":
+      return "path-bad";
+    case "warning":
+      return "stat-tile-value-warning";
+    default:
+      return "text-[var(--color-muted)]";
+  }
+}
+
+function perfStatusTone(status: PerformanceReleaseSummary["status"]): "success" | "danger" | "muted" {
+  if (status === "regressions") return "danger";
+  if (status === "ok") return "success";
+  return "muted";
+}
 
 export default function ReleasesPage() {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
@@ -312,89 +341,85 @@ export default function ReleasesPage() {
       return;
     }
 
-    setMessage(`Bundle exported to ${payload.outputDir ?? ".fdt/exports/releases/" + selectedRelease.version}`);
+    setMessage(
+      `Bundle exported to ${payload.outputDir ?? ".fdt/exports/releases/" + selectedRelease.version}`,
+    );
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading releases…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading releases…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Releases</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage releases.</p>
-      </section>
+      <PageStack>
+        <EmptyState title="Releases" description="Select an active workspace to manage releases." />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Release Manager</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Create release candidates from validation reports stored in{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/</code>. Bundles are
-          written to{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/releases/&lt;version&gt;/</code>{" "}
-          with changelog and rollback manifest.
-        </p>
+    <PageStack>
+      <PageIntro
+        title="Release Manager"
+        description={
+          <>
+            Create release candidates from validation reports in{" "}
+            <code className="inline-code">.fdt/reports/</code>. Bundles are written to{" "}
+            <code className="inline-code">.fdt/releases/&lt;version&gt;/</code> with changelog and rollback
+            manifest.
+          </>
+        }
+      />
 
-        <div className="mt-4 rounded-xl border border-dashed border-cyan-500/20 bg-cyan-500/5 p-4 text-sm text-slate-300">
-          <p className="font-medium text-cyan-200">Before creating a release</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-400">
-            <li>
-              Run <code className="text-slate-200">fdt validate resources</code>
-            </li>
-            <li>
-              Optionally run <code className="text-slate-200">fdt content validate</code> and{" "}
-              <code className="text-slate-200">fdt audit stream</code>
-            </li>
-            <li>
-              Create via CLI:{" "}
-              <code className="text-slate-200">fdt release create --version 0.1.0</code>
-            </li>
-            <li>
-              Diff:{" "}
-              <code className="text-slate-200">fdt release diff --from 0.3.9 --to 0.4.0</code>
-            </li>
-            <li>
-              Checklist:{" "}
-              <code className="text-slate-200">fdt release checklist --version 0.4.0</code>
-            </li>
-            <li>
-              Export bundle:{" "}
-              <code className="text-slate-200">fdt release bundle --version 0.4.0 --out ./releases/0.4.0</code>
-            </li>
-          </ol>
-        </div>
+      <NotePanel title="Before creating a release">
+        <ol>
+          <li>
+            Run <code>fdt validate resources</code>
+          </li>
+          <li>
+            Optionally run <code>fdt content validate</code> and <code>fdt audit stream</code>
+          </li>
+          <li>
+            Create via CLI: <code>fdt release create --version 0.1.0</code>
+          </li>
+          <li>
+            Diff: <code>fdt release diff --from 0.3.9 --to 0.4.0</code>
+          </li>
+          <li>
+            Checklist: <code>fdt release checklist --version 0.4.0</code>
+          </li>
+          <li>
+            Export bundle: <code>fdt release bundle --version 0.4.0 --out ./releases/0.4.0</code>
+          </li>
+        </ol>
+      </NotePanel>
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
+      {message && <PageAlert>{message}</PageAlert>}
 
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Create Release</h3>
-          <form className="mt-4 space-y-3 text-sm" onSubmit={handleCreateRelease}>
-            <label className="block">
-              <span className="text-slate-400">Version</span>
+      <div className="page-grid-2">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Create Release</h3>
+          <form className="form-stack panel-section" onSubmit={handleCreateRelease}>
+            <label className="form-field">
+              <span className="form-label">Version</span>
               <input
                 required
                 value={createVersion}
                 onChange={(e) => setCreateVersion(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               />
             </label>
-            <label className="block">
-              <span className="text-slate-400">Environment</span>
+            <label className="form-field">
+              <span className="form-label">Environment</span>
               <select
                 value={createEnvironment}
                 onChange={(e) => setCreateEnvironment(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               >
                 {["local", "dev", "staging", "production"].map((env) => (
                   <option key={env} value={env}>
@@ -403,175 +428,149 @@ export default function ReleasesPage() {
                 ))}
               </select>
             </label>
-            <button
-              type="submit"
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200 hover:bg-cyan-500/30"
-            >
+            <button type="submit" className="btn btn-accent btn-sm">
               Create release
             </button>
           </form>
 
-          <h3 className="mt-8 font-semibold">Releases ({releases.length})</h3>
-          <div className="mt-3 space-y-2">
+          <h3 className="panel-heading panel-section">Releases ({releases.length})</h3>
+          <div className="panel-section space-y-2">
             {releases.length === 0 ? (
-              <p className="text-sm text-slate-400">No releases yet.</p>
+              <p className="panel-subtext">No releases yet.</p>
             ) : (
               releases.map((release) => (
                 <button
                   key={release.id}
                   type="button"
                   onClick={() => setSelectedRelease(release)}
-                  className={`block w-full rounded-lg border px-3 py-2 text-left text-sm ${
-                    selectedRelease?.id === release.id
-                      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-100"
-                      : "border-white/10 bg-[#0b1020] text-slate-300 hover:border-white/20"
+                  className={`browse-item w-full ${
+                    selectedRelease?.id === release.id ? "workspace-card-active" : ""
                   }`}
                 >
-                  <div className="font-medium">{release.version}</div>
-                  <div className="text-xs text-slate-500">{release.status}</div>
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="font-medium">{release.version}</div>
+                    <div className="text-xs text-[var(--color-muted)]">{release.status}</div>
+                  </div>
                 </button>
               ))
             )}
           </div>
-        </section>
+        </Panel>
 
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
+        <Panel className="panel-compact">
           {selectedRelease ? (
             <>
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="workspace-card-head">
                 <div>
-                  <h3 className="text-lg font-semibold">Release {selectedRelease.version}</h3>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <h3 className="panel-heading">Release {selectedRelease.version}</h3>
+                  <p className="panel-subtext">
                     {selectedRelease.targetEnvironment} · {selectedRelease.status}
                   </p>
                 </div>
-                <div className="text-right text-xs text-slate-500">
+                <div className="text-right text-xs text-[var(--color-muted)]">
                   <div>{new Date(selectedRelease.createdAt).toLocaleString()}</div>
                   {selectedRelease.bundlePath && <div>{selectedRelease.bundlePath}</div>}
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                  <div className="text-slate-500">Validation errors</div>
-                  <div className="text-xl font-semibold text-rose-300">
-                    {selectedRelease.validationSummary.errors}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                  <div className="text-slate-500">Warnings</div>
-                  <div className="text-xl font-semibold text-amber-300">
-                    {selectedRelease.validationSummary.warnings}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                  <div className="text-slate-500">Resources changed</div>
-                  <div className="text-xl font-semibold text-cyan-200">
-                    {selectedRelease.changedResources.length}
-                  </div>
-                </div>
+              <div className="panel-section">
+                <StatGrid columns={3}>
+                <StatTile
+                  label="Validation errors"
+                  value={selectedRelease.validationSummary.errors}
+                  tone="danger"
+                />
+                <StatTile
+                  label="Warnings"
+                  value={selectedRelease.validationSummary.warnings}
+                  tone="warning"
+                />
+                <StatTile
+                  label="Resources changed"
+                  value={selectedRelease.changedResources.length}
+                  tone="muted"
+                />
+              </StatGrid>
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">QA status</h4>
+              <div className="panel-section">
+                <h4 className="panel-heading">QA status</h4>
                 {qaSummary && qaSummary.totalRuns > 0 ? (
                   <>
-                    <div className="mt-3 grid gap-4 sm:grid-cols-4">
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Total runs</div>
-                        <div className="text-xl font-semibold text-cyan-200">{qaSummary.totalRuns}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Completed</div>
-                        <div className="text-xl font-semibold text-emerald-300">{qaSummary.completed}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Failed</div>
-                        <div className="text-xl font-semibold text-rose-300">{qaSummary.failed}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Latest</div>
-                        <div className="text-xl font-semibold text-amber-200">{qaSummary.latestStatus}</div>
-                      </div>
-                    </div>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                    <StatGrid columns={4}>
+                      <StatTile label="Total runs" value={qaSummary.totalRuns} />
+                      <StatTile label="Completed" value={qaSummary.completed} tone="success" />
+                      <StatTile label="Failed" value={qaSummary.failed} tone="danger" />
+                      <StatTile label="Latest" value={qaSummary.latestStatus} tone="warning" />
+                    </StatGrid>
+                    <ul className="list-plain panel-section text-sm text-[var(--color-muted)]">
                       {qaRuns.map((run) => (
-                        <li key={run.id} className="rounded-lg bg-[#0b1020] px-3 py-2">
-                          <span className="text-cyan-200">{run.scenarioLabel ?? run.scenarioId}</span> ·{" "}
-                          {run.status} · {new Date(run.startedAt).toLocaleString()}
+                        <li key={run.id} className="finding-card">
+                          <span className="text-[var(--color-accent-ink)]">
+                            {run.scenarioLabel ?? run.scenarioId}
+                          </span>{" "}
+                          · {run.status} · {new Date(run.startedAt).toLocaleString()}
                         </li>
                       ))}
                     </ul>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="panel-subtext">
                     No QA runs attached. Import runs from the QA page or in-game export.
                   </p>
                 )}
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">Performance status</h4>
+              <div className="panel-section">
+                <h4 className="panel-heading">Performance status</h4>
                 {perfSummary && perfSummary.totalSnapshots > 0 ? (
                   <>
-                    <div className="mt-3 grid gap-4 sm:grid-cols-4">
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Snapshots</div>
-                        <div className="text-xl font-semibold text-cyan-200">{perfSummary.totalSnapshots}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Status</div>
-                        <div
-                          className={`text-xl font-semibold ${
-                            perfSummary.status === "regressions"
-                              ? "text-rose-300"
-                              : perfSummary.status === "ok"
-                                ? "text-emerald-300"
-                                : "text-slate-300"
-                          }`}
-                        >
-                          {perfSummary.status}
-                        </div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Regressions</div>
-                        <div className="text-xl font-semibold text-rose-300">{perfSummary.regressions}</div>
-                      </div>
-                      <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3 text-sm">
-                        <div className="text-slate-500">Latest capture</div>
-                        <div className="text-sm font-medium text-amber-200">
-                          {perfSummary.latestCapturedAt
+                    <StatGrid columns={4}>
+                      <StatTile label="Snapshots" value={perfSummary.totalSnapshots} />
+                      <StatTile
+                        label="Status"
+                        value={perfSummary.status}
+                        tone={perfStatusTone(perfSummary.status)}
+                      />
+                      <StatTile label="Regressions" value={perfSummary.regressions} tone="danger" />
+                      <StatTile
+                        label="Latest capture"
+                        value={
+                          perfSummary.latestCapturedAt
                             ? new Date(perfSummary.latestCapturedAt).toLocaleString()
-                            : "—"}
-                        </div>
-                      </div>
-                    </div>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                            : "—"
+                        }
+                        tone="muted"
+                      />
+                    </StatGrid>
+                    <ul className="list-plain panel-section text-sm text-[var(--color-muted)]">
                       {perfSnapshots.map((snapshot) => (
-                        <li key={snapshot.id} className="rounded-lg bg-[#0b1020] px-3 py-2">
-                          <span className="text-cyan-200">{snapshot.label ?? snapshot.id}</span> ·{" "}
-                          {snapshot.resources.length} resources ·{" "}
+                        <li key={snapshot.id} className="finding-card">
+                          <span className="text-[var(--color-accent-ink)]">
+                            {snapshot.label ?? snapshot.id}
+                          </span>{" "}
+                          · {snapshot.resources.length} resources ·{" "}
                           {new Date(snapshot.capturedAt).toLocaleString()}
                         </li>
                       ))}
                     </ul>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="panel-subtext">
                     No performance snapshots attached. Import via the Performance page or{" "}
-                    <code className="text-slate-200">fdt perf import</code>.
+                    <code className="inline-code">fdt perf import</code>.
                   </p>
                 )}
               </div>
 
-              <div className="mt-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h4 className="font-medium">Deploy checklist</h4>
+              <div className="panel-section">
+                <div className="workspace-card-head">
+                  <h4 className="panel-heading">Deploy checklist</h4>
                   <button
                     type="button"
                     onClick={() => void handleExportBundle()}
                     disabled={exportingBundle}
-                    className="rounded-lg bg-cyan-500/15 px-3 py-1.5 text-xs font-medium text-cyan-200 hover:bg-cyan-500/25 disabled:opacity-50"
+                    className="btn btn-accent btn-sm"
                   >
                     {exportingBundle ? "Exporting…" : "Export bundle"}
                   </button>
@@ -579,30 +578,16 @@ export default function ReleasesPage() {
                 {checklist ? (
                   <>
                     <p
-                      className={`mt-2 text-sm ${
-                        checklist.passed ? "text-emerald-300" : "text-rose-300"
-                      }`}
+                      className={`panel-subtext ${checklist.passed ? "path-ok" : "path-bad"}`}
                     >
                       Checklist {checklist.passed ? "passed" : "failed"} · {checklist.summary.passed}{" "}
                       passed · {checklist.summary.failed} failed · {checklist.summary.warnings} warnings
                     </p>
-                    <ul className="mt-3 space-y-2 text-sm text-slate-400">
+                    <ul className="list-plain panel-section text-sm">
                       {checklist.items.map((item) => (
-                        <li key={item.id} className="rounded-lg bg-[#0b1020] px-3 py-2">
-                          <span
-                            className={
-                              item.status === "passed"
-                                ? "text-emerald-300"
-                                : item.status === "failed"
-                                  ? "text-rose-300"
-                                  : item.status === "warning"
-                                    ? "text-amber-300"
-                                    : "text-slate-400"
-                            }
-                          >
-                            {item.status}
-                          </span>{" "}
-                          · {item.label}
+                        <li key={item.id} className="finding-card">
+                          <span className={checklistStatusClass(item.status)}>{item.status}</span> ·{" "}
+                          {item.label}
                           {item.blocking ? " (blocking)" : ""}
                           {item.message ? ` — ${item.message}` : ""}
                         </li>
@@ -610,19 +595,19 @@ export default function ReleasesPage() {
                     </ul>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-400">Loading checklist…</p>
+                  <p className="panel-subtext">Loading checklist…</p>
                 )}
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">Release diff</h4>
-                <div className="mt-2 flex flex-wrap items-end gap-2 text-sm">
-                  <label className="block">
-                    <span className="text-slate-400">From version</span>
+              <div className="panel-section">
+                <h4 className="panel-heading">Release diff</h4>
+                <div className="form-grid form-grid-2">
+                  <label className="form-field">
+                    <span className="form-label">From version</span>
                     <select
                       value={diffFromVersion}
                       onChange={(e) => setDiffFromVersion(e.target.value)}
-                      className="mt-1 block rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                      className="form-control"
                     >
                       <option value="">Select…</option>
                       {releases
@@ -634,17 +619,19 @@ export default function ReleasesPage() {
                         ))}
                     </select>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => void handleLoadDiff()}
-                    disabled={!diffFromVersion}
-                    className="rounded-lg bg-cyan-500/15 px-3 py-2 text-xs font-medium text-cyan-200 hover:bg-cyan-500/25 disabled:opacity-50"
-                  >
-                    Compare → {selectedRelease.version}
-                  </button>
+                  <div className="btn-row self-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleLoadDiff()}
+                      disabled={!diffFromVersion}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      Compare → {selectedRelease.version}
+                    </button>
+                  </div>
                 </div>
                 {diffReport && (
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+                  <div className="page-grid-2 panel-section">
                     {(
                       [
                         ["Resources", diffReport.sections.resources],
@@ -654,34 +641,33 @@ export default function ReleasesPage() {
                         ["Migrations", diffReport.sections.databaseMigrations],
                       ] as const
                     ).map(([title, section]) => (
-                      <div key={title} className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-                        <div className="font-medium text-cyan-200">{title}</div>
-                        <div className="mt-1 text-slate-400">
-                          +{section.added.length} / -{section.removed.length} / =
-                          {section.unchanged.length}
-                        </div>
-                      </div>
+                      <article key={title} className="stat-tile">
+                        <p className="stat-tile-label">{title}</p>
+                        <p className="stat-tile-value text-base">
+                          +{section.added.length} / -{section.removed.length} / ={section.unchanged.length}
+                        </p>
+                      </article>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">Update status</h4>
+              <div className="panel-section">
+                <h4 className="panel-heading">Update status</h4>
                 <textarea
                   value={statusNote}
                   onChange={(e) => setStatusNote(e.target.value)}
                   rows={2}
                   placeholder="Optional note for approval history"
-                  className="mt-2 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm"
+                  className="form-control panel-section"
                 />
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="btn-row">
                   {STATUS_OPTIONS.map((status) => (
                     <button
                       key={status}
                       type="button"
                       onClick={() => void handleMarkStatus(status)}
-                      className="rounded-lg bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-emerald-500/25"
+                      className="btn btn-secondary btn-sm"
                     >
                       Mark {status}
                     </button>
@@ -689,12 +675,12 @@ export default function ReleasesPage() {
                 </div>
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">Approval history</h4>
-                <ul className="mt-2 space-y-2 text-sm text-slate-400">
+              <div className="panel-section">
+                <h4 className="panel-heading">Approval history</h4>
+                <ul className="list-plain text-sm text-[var(--color-muted)]">
                   {selectedRelease.statusHistory.map((entry, index) => (
-                    <li key={`${entry.changedAt}-${index}`} className="rounded-lg bg-[#0b1020] px-3 py-2">
-                      <span className="text-cyan-200">{entry.status}</span> ·{" "}
+                    <li key={`${entry.changedAt}-${index}`} className="finding-card">
+                      <span className="text-[var(--color-accent-ink)]">{entry.status}</span> ·{" "}
                       {new Date(entry.changedAt).toLocaleString()}
                       {entry.note ? ` — ${entry.note}` : ""}
                     </li>
@@ -702,18 +688,16 @@ export default function ReleasesPage() {
                 </ul>
               </div>
 
-              <div className="mt-6">
-                <h4 className="font-medium">Changelog</h4>
-                <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-[#0b1020] p-4 text-xs text-slate-300">
-                  {selectedRelease.changelogMarkdown}
-                </pre>
+              <div className="panel-section">
+                <h4 className="panel-heading">Changelog</h4>
+                <pre className="code-block">{selectedRelease.changelogMarkdown}</pre>
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-400">Select a release to view details.</p>
+            <p className="panel-subtext">Select a release to view details.</p>
           )}
-        </section>
+        </Panel>
       </div>
-    </div>
+    </PageStack>
   );
 }

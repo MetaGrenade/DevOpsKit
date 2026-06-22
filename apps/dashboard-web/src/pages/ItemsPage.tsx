@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Item {
@@ -177,90 +184,83 @@ export default function ItemsPage() {
   }
 
   if (loading) {
-    return <p className="text-slate-400">Loading items…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading items…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Item Workbench</h2>
-        <p className="mt-2 text-sm text-slate-400">Select or register a workspace first.</p>
-      </section>
+      <PageStack>
+        <EmptyState title="Item Workbench" description="Select or register a workspace first." />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Item Workbench</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Neutral item registry for <span className="text-cyan-200">{activeWorkspace.name}</span>
-              {frameworkProfile && (
-                <>
-                  {" "}
-                  ·{" "}
-                  <span className="text-slate-300">
-                    {frameworkProfile.framework} / {frameworkProfile.inventory}
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => void handleValidate()}
-              className="rounded-lg border border-white/10 px-3 py-1.5 text-sm hover:bg-white/5"
-            >
-              Validate
-            </button>
-          </div>
-        </div>
+    <PageStack>
+      <PageIntro
+        title="Item Workbench"
+        description={
+          <>
+            Neutral item registry for{" "}
+            <span className="text-[var(--color-accent-ink)]">{activeWorkspace.name}</span>
+            {frameworkProfile && (
+              <>
+                {" "}
+                · {frameworkProfile.framework} / {frameworkProfile.inventory}
+              </>
+            )}
+          </>
+        }
+        actions={
+          <button type="button" onClick={() => void handleValidate()} className="btn btn-secondary btn-sm">
+            Validate
+          </button>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100">
-            {message}
-          </p>
-        )}
+      {message && <PageAlert>{message}</PageAlert>}
 
-        <form onSubmit={(e) => void handleSaveItem(e)} className="mt-6 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="text-slate-400">Item ID</span>
+      <Panel className="panel-compact">
+        <form onSubmit={(e) => void handleSaveItem(e)} className="form-grid form-grid-2 form-stack">
+          <label className="form-field">
+            <span className="form-label">Item ID</span>
             <input
               required
               pattern="[a-z0-9_]+"
               value={form.id}
               onChange={(e) => setForm({ ...form, id: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+              className="form-control"
               placeholder="water_bottle"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-slate-400">Label</span>
+          <label className="form-field">
+            <span className="form-label">Label</span>
             <input
               required
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+              className="form-control"
               placeholder="Water Bottle"
             />
           </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="text-slate-400">Description</span>
+          <label className="form-field sm:col-span-2">
+            <span className="form-label">Description</span>
             <input
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+              className="form-control"
             />
           </label>
-          <label className="block text-sm">
-            <span className="text-slate-400">Category</span>
+          <label className="form-field">
+            <span className="form-label">Category</span>
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+              className="form-control"
             >
               {["food", "drink", "medical", "tool", "weapon", "material", "misc"].map((cat) => (
                 <option key={cat} value={cat}>
@@ -269,20 +269,20 @@ export default function ItemsPage() {
               ))}
             </select>
           </label>
-          <label className="block text-sm">
-            <span className="text-slate-400">Weight (kg)</span>
+          <label className="form-field">
+            <span className="form-label">Weight (kg)</span>
             <input
               type="number"
               min="0"
               step="0.01"
               value={form.weight}
               onChange={(e) => setForm({ ...form, weight: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+              className="form-control"
             />
           </label>
-          <div className="flex flex-wrap gap-4 text-sm sm:col-span-2">
+          <div className="flex flex-wrap gap-4 sm:col-span-2">
             {(["stackable", "unique", "usable"] as const).map((key) => (
-              <label key={key} className="flex items-center gap-2">
+              <label key={key} className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={form[key]}
@@ -292,33 +292,30 @@ export default function ItemsPage() {
               </label>
             ))}
           </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-cyan-600 px-4 py-2 text-sm font-medium hover:bg-cyan-500 sm:col-span-2"
-          >
+          <button type="submit" className="btn btn-accent btn-sm sm:col-span-2">
             Save item
           </button>
         </form>
-      </section>
+      </Panel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h3 className="font-semibold">Registry ({items.length})</h3>
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Registry ({items.length})</h3>
         {items.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-400">No items yet. Add one above or import via CLI.</p>
+          <p className="panel-subtext">No items yet. Add one above or import via CLI.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-white/5">
+          <ul className="list-plain panel-section divide-y divide-[var(--color-line)]">
             {items.map((item) => (
               <li key={item.id} className="flex items-center justify-between gap-4 py-3 text-sm">
                 <div>
-                  <p className="font-medium text-cyan-100">{item.label}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-medium text-[var(--color-accent-ink)]">{item.label}</p>
+                  <p className="text-xs text-[var(--color-muted)]">
                     {item.id} · {item.category} · {item.weight}kg
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => void handleDeleteItem(item.id)}
-                  className="text-xs text-rose-300 hover:text-rose-200"
+                  className="btn btn-secondary btn-sm"
                 >
                   Delete
                 </button>
@@ -326,15 +323,15 @@ export default function ItemsPage() {
             ))}
           </ul>
         )}
-      </section>
+      </Panel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h3 className="font-semibold">Adapter export preview</h3>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Adapter export preview</h3>
+        <div className="btn-row panel-section">
           <select
             value={selectedAdapter}
             onChange={(e) => setSelectedAdapter(e.target.value)}
-            className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm"
+            className="form-control"
           >
             {adapters.map((adapter) => (
               <option key={adapter.id} value={adapter.id}>
@@ -343,28 +340,22 @@ export default function ItemsPage() {
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            onClick={() => void handleExportPreview()}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/5"
-          >
+          <button type="button" onClick={() => void handleExportPreview()} className="btn btn-secondary btn-sm">
             Preview export
           </button>
         </div>
 
         {exportPreview && (
-          <div className="mt-4 space-y-4">
+          <div className="panel-section space-y-4">
             {exportPreview.map((file) => (
               <div key={file.relativePath}>
-                <p className="text-xs uppercase tracking-wide text-slate-500">{file.relativePath}</p>
-                <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-[#0b1020] p-4 text-xs text-slate-300">
-                  {file.content}
-                </pre>
+                <p className="stat-tile-label">{file.relativePath}</p>
+                <pre className="code-block mt-2 max-h-64 overflow-auto">{file.content}</pre>
               </div>
             ))}
           </div>
         )}
-      </section>
-    </div>
+      </Panel>
+    </PageStack>
   );
 }

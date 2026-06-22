@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface GraphSummary {
@@ -93,79 +102,102 @@ export default function GraphPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading dependency graph…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading dependency graph…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Dependency Graph</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to inspect resource dependencies.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Dependency Graph"
+          description="Select an active workspace to inspect resource dependencies."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Dependency Graph</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Map manifest dependencies, file references, server.cfg startup order, and basic Lua event registration/trigger
-          edges across your resource tree.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI: <code className="text-slate-200">fdt graph build</code> ·{" "}
-          <code className="text-slate-200">fdt graph impacted --resource meta_core</code> ·{" "}
-          <code className="text-slate-200">fdt graph export --format dot</code>
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button type="button" disabled={busy} onClick={() => void runBuild()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
+    <PageStack>
+      <PageIntro
+        title="Dependency Graph"
+        description="Map manifest dependencies, file references, server.cfg startup order, and basic Lua event registration/trigger edges across your resource tree."
+        actions={
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runBuild()}
+            className="btn btn-accent btn-sm"
+          >
             {busy ? "Working…" : "Build graph"}
           </button>
-        </div>
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">{message}</p>}
-      </section>
+        }
+      />
+
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt graph build</code> ·{" "}
+          <code className="inline-code">fdt graph impacted --resource meta_core</code> ·{" "}
+          <code className="inline-code">fdt graph export --format dot</code>
+        </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="text-lg font-semibold">Graph summary</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">{report.summary.resources} resources</div>
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">{report.summary.dependencyEdges} dependency edges</div>
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">{report.summary.eventEdges} event edges</div>
-          </div>
-        </section>
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Graph summary</h3>
+          <StatGrid columns={3}>
+            <StatTile label="Resources" value={report.summary.resources} />
+            <StatTile label="Dependency edges" value={report.summary.dependencyEdges} />
+            <StatTile label="Event edges" value={report.summary.eventEdges} />
+          </StatGrid>
+        </Panel>
       )}
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">Impact analysis</h3>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <input value={resourceName} onChange={(e) => setResourceName(e.target.value)} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm" placeholder="Resource name" />
-          <button type="button" disabled={busy} onClick={() => void runImpact()} className="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-50">
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Impact analysis</h3>
+        <div className="btn-row panel-section">
+          <input
+            value={resourceName}
+            onChange={(e) => setResourceName(e.target.value)}
+            className="form-control"
+            placeholder="Resource name"
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void runImpact()}
+            className="btn btn-secondary btn-sm"
+          >
             Find impacted resources
           </button>
         </div>
         {impact && (
-          <div className="mt-4 space-y-2 text-sm text-slate-300">
+          <div className="panel-section space-y-2 text-sm">
             <p>Direct dependents: {impact.directDependents.join(", ") || "(none)"}</p>
             <p>Transitive dependents: {impact.transitiveDependents.join(", ") || "(none)"}</p>
           </div>
         )}
-      </section>
+      </Panel>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="text-lg font-semibold">Sample edges</h3>
-          <div className="mt-4 space-y-2">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Sample edges</h3>
+          <div className="panel-section space-y-2">
             {report.edges.slice(0, 20).map((edge) => (
-              <article key={edge.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={edge.id} className="finding-card text-sm">
                 <div className="font-medium">{edge.type}</div>
-                <div className="text-xs text-slate-500">{edge.source} → {edge.target}</div>
+                <div className="text-xs text-[var(--color-muted)]">
+                  {edge.source} → {edge.target}
+                </div>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

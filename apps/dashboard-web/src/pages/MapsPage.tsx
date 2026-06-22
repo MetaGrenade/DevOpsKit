@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface MapChecklistItem {
@@ -38,14 +47,14 @@ interface MapReport {
   findings: MapFinding[];
 }
 
-function severityClass(severity: string): string {
+function severityBadgeClass(severity: string): string {
   switch (severity) {
     case "error":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "warning":
-      return "text-amber-200 bg-amber-500/15";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -173,79 +182,101 @@ export default function MapsPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading maps…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading maps…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Map / MLO Packaging Assistant</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage map packages.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Map / MLO Packaging Assistant"
+          description="Select an active workspace to manage map packages."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Map / MLO Packaging Assistant</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Scaffold map resources, audit stream assets (.ymap/.ytyp/.ybn), track packaging checklists, and export QA
-          teleport test points.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI: <code className="text-slate-200">fdt map new</code> ·{" "}
-          <code className="text-slate-200">fdt map audit</code> ·{" "}
-          <code className="text-slate-200">fdt map export-test-points</code>
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button type="button" disabled={busy} onClick={() => void runScan()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            {busy ? "Working…" : "Scan maps"}
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runAudit()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            Run audit
-          </button>
-          <button type="button" disabled={busy} onClick={() => void exportTestPoints()} className="rounded-lg bg-white/10 px-4 py-2 text-sm hover:bg-white/15 disabled:opacity-50">
-            Export test points
-          </button>
-        </div>
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">{message}</p>}
-      </section>
+    <PageStack>
+      <PageIntro
+        title="Map / MLO Packaging Assistant"
+        description="Scaffold map resources, audit stream assets (.ymap/.ytyp/.ybn), track packaging checklists, and export QA teleport test points."
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button type="button" disabled={busy} onClick={() => void runScan()} className="btn btn-accent btn-sm">
+              {busy ? "Working…" : "Scan maps"}
+            </button>
+            <button type="button" disabled={busy} onClick={() => void runAudit()} className="btn btn-secondary btn-sm">
+              Run audit
+            </button>
+            <button type="button" disabled={busy} onClick={() => void exportTestPoints()} className="btn btn-secondary btn-sm">
+              Export test points
+            </button>
+          </div>
+        }
+      />
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">New map scaffold</h3>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <input value={newMapForm.resourceName} onChange={(e) => setNewMapForm({ ...newMapForm, resourceName: e.target.value })} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm" placeholder="Resource name" />
-          <input value={newMapForm.label} onChange={(e) => setNewMapForm({ ...newMapForm, label: e.target.value })} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm" placeholder="Label" />
-          <button type="button" disabled={busy} onClick={() => void createMap()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt map new</code> · <code className="inline-code">fdt map audit</code> ·{" "}
+          <code className="inline-code">fdt map export-test-points</code>
+        </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
+
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">New map scaffold</h3>
+        <div className="btn-row panel-section">
+          <input
+            value={newMapForm.resourceName}
+            onChange={(e) => setNewMapForm({ ...newMapForm, resourceName: e.target.value })}
+            className="form-control"
+            placeholder="Resource name"
+          />
+          <input
+            value={newMapForm.label}
+            onChange={(e) => setNewMapForm({ ...newMapForm, label: e.target.value })}
+            className="form-control"
+            placeholder="Label"
+          />
+          <button type="button" disabled={busy} onClick={() => void createMap()} className="btn btn-accent btn-sm">
             Scaffold map
           </button>
         </div>
-      </section>
+      </Panel>
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">Map registry ({maps.length})</h3>
-        <div className="mt-4 space-y-3">
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">Map registry ({maps.length})</h3>
+        <div className="panel-section space-y-3">
           {maps.length === 0 ? (
-            <p className="text-sm text-slate-400">No maps registered yet. Scaffold a map or run an audit to sync resources.</p>
+            <p className="panel-subtext">No maps registered yet. Scaffold a map or run an audit to sync resources.</p>
           ) : (
             maps.map((mapPackage) => (
-              <article key={mapPackage.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-3 text-sm">
+              <article key={mapPackage.id} className="finding-card text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="font-medium">{mapPackage.label}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-[var(--color-muted)]">
                       {mapPackage.id} · {mapPackage.resourceName} · {mapPackage.status}
                     </div>
                   </div>
-                  <button type="button" disabled={busy} onClick={() => void refreshChecklist(mapPackage.id)} className="rounded-lg bg-white/10 px-3 py-1 text-xs hover:bg-white/15 disabled:opacity-50">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void refreshChecklist(mapPackage.id)}
+                    className="btn btn-secondary btn-sm"
+                  >
                     Refresh checklist
                   </button>
                 </div>
                 {mapPackage.checklist.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-xs text-slate-400">
+                  <ul className="list-plain mt-2 text-xs text-[var(--color-muted)]">
                     {mapPackage.checklist.map((item) => (
-                      <li key={item.id} className={item.passed ? "text-emerald-300/90" : "text-slate-500"}>
+                      <li key={item.id} className={item.passed ? "path-ok" : ""}>
                         {item.passed ? "✓" : "○"} {item.label}
                       </li>
                     ))}
@@ -255,27 +286,29 @@ export default function MapsPage() {
             ))
           )}
         </div>
-      </section>
+      </Panel>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="text-lg font-semibold">Audit findings</h3>
-          <p className="mt-1 text-sm text-slate-400">
-            {report.summary.errors} errors · {report.summary.warnings} warnings · {report.summary.info} info
-          </p>
-          <div className="mt-4 space-y-2">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Audit findings</h3>
+          <StatGrid columns={3}>
+            <StatTile label="Errors" value={report.summary.errors} tone="danger" />
+            <StatTile label="Warnings" value={report.summary.warnings} tone="warning" />
+            <StatTile label="Info" value={report.summary.info} tone="muted" />
+          </StatGrid>
+          <div className="panel-section space-y-2">
             {report.findings.slice(0, 12).map((finding) => (
-              <article key={finding.id} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={finding.id} className="finding-card text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">{finding.code}</span>
-                  <span className={`rounded px-2 py-0.5 text-xs ${severityClass(finding.severity)}`}>{finding.severity}</span>
+                  <span className={`text-xs ${severityBadgeClass(finding.severity)}`}>{finding.severity}</span>
                 </div>
-                <p className="mt-1 text-slate-400">{finding.message}</p>
+                <p className="mt-1 text-[var(--color-muted)]">{finding.message}</p>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

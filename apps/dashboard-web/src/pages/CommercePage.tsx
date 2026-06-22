@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ItemOption {
@@ -192,92 +199,89 @@ export default function CommercePage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading commerce builders…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading commerce builders…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Shop & Crafting Builders</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage shops and crafting recipes.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Shop & Crafting Builders"
+          description="Select an active workspace to manage shops and crafting recipes."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">Shop & Crafting Builders</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-              Author neutral shop inventories and crafting recipes under{" "}
-              <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/content/shops.json</code> and{" "}
-              <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/content/crafting-recipes.json</code>.
-              Validation checks missing item references via{" "}
-              <code className="rounded bg-white/5 px-1.5 py-0.5">fdt content validate</code>.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleValidate()}
-            className="rounded-lg bg-cyan-500/15 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/25"
-          >
+    <PageStack>
+      <PageIntro
+        title="Shop & Crafting Builders"
+        description={
+          <>
+            Author neutral shop inventories and crafting recipes under{" "}
+            <code className="inline-code">.fdt/content/shops.json</code> and{" "}
+            <code className="inline-code">.fdt/content/crafting-recipes.json</code>. Validation checks missing item
+            references via <code className="inline-code">fdt content validate</code>.
+          </>
+        }
+        actions={
+          <button type="button" onClick={() => void handleValidate()} className="btn btn-secondary btn-sm">
             Validate content
           </button>
-        </div>
+        }
+      />
 
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
+      {message && <PageAlert>{message}</PageAlert>}
 
-        <div className="mt-6 flex gap-2 text-sm">
+      <Panel className="panel-compact">
+        <div className="tab-row">
           {(["shops", "crafting"] as const).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setTab(value)}
-              className={`rounded-lg px-3 py-1.5 capitalize ${
-                tab === value ? "bg-cyan-500/20 text-cyan-200" : "text-slate-400 hover:text-white"
-              }`}
+              className={`tab-btn capitalize ${tab === value ? "tab-btn-active" : ""}`}
             >
               {value}
             </button>
           ))}
         </div>
-      </section>
+      </Panel>
 
       {tab === "shops" ? (
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Create Shop</h3>
-            <form className="mt-4 space-y-3 text-sm" onSubmit={handleSaveShop}>
-              <label className="block">
-                <span className="text-slate-400">Shop id</span>
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Create Shop</h3>
+            <form className="form-stack panel-section" onSubmit={handleSaveShop}>
+              <label className="form-field">
+                <span className="form-label">Shop id</span>
                 <input
                   required
                   value={shopForm.id}
                   onChange={(e) => setShopForm({ ...shopForm, id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Label</span>
+              <label className="form-field">
+                <span className="form-label">Label</span>
                 <input
                   required
                   value={shopForm.label}
                   onChange={(e) => setShopForm({ ...shopForm, label: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Starter item</span>
+              <label className="form-field">
+                <span className="form-label">Starter item</span>
                 <select
                   value={shopForm.itemId}
                   onChange={(e) => setShopForm({ ...shopForm, itemId: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 >
                   <option value="">None</option>
                   {items.map((item) => (
@@ -287,36 +291,33 @@ export default function CommercePage() {
                   ))}
                 </select>
               </label>
-              <label className="block">
-                <span className="text-slate-400">Price</span>
+              <label className="form-field">
+                <span className="form-label">Price</span>
                 <input
                   value={shopForm.itemPrice}
                   onChange={(e) => setShopForm({ ...shopForm, itemPrice: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <button
-                type="submit"
-                className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200 hover:bg-cyan-500/30"
-              >
+              <button type="submit" className="btn btn-accent btn-sm">
                 Save shop
               </button>
             </form>
-          </section>
+          </Panel>
 
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Shops ({shops.length})</h3>
-            <div className="mt-4 space-y-3">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Shops ({shops.length})</h3>
+            <div className="panel-section space-y-3">
               {shops.length === 0 ? (
-                <p className="text-sm text-slate-400">No shops yet.</p>
+                <p className="panel-subtext">No shops yet.</p>
               ) : (
                 shops.map((shop) => (
-                  <article key={shop.id} className="rounded-lg border border-white/10 bg-[#0b1020] p-4 text-sm">
-                    <div className="font-medium text-cyan-200">{shop.label}</div>
-                    <div className="text-xs text-slate-500">
+                  <article key={shop.id} className="finding-card text-sm">
+                    <div className="font-medium">{shop.label}</div>
+                    <div className="text-xs text-[var(--color-muted)]">
                       {shop.id} · {shop.type} · {shop.currency}
                     </div>
-                    <ul className="mt-2 space-y-1 text-slate-400">
+                    <ul className="list-plain mt-2 text-[var(--color-muted)]">
                       {shop.items.map((entry) => (
                         <li key={`${shop.id}-${entry.itemId}`}>
                           {entry.itemId} — ${entry.price}
@@ -327,38 +328,38 @@ export default function CommercePage() {
                 ))
               )}
             </div>
-          </section>
+          </Panel>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Create Recipe</h3>
-            <form className="mt-4 space-y-3 text-sm" onSubmit={handleSaveRecipe}>
-              <label className="block">
-                <span className="text-slate-400">Recipe id</span>
+        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Create Recipe</h3>
+            <form className="form-stack panel-section" onSubmit={handleSaveRecipe}>
+              <label className="form-field">
+                <span className="form-label">Recipe id</span>
                 <input
                   required
                   value={recipeForm.id}
                   onChange={(e) => setRecipeForm({ ...recipeForm, id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Label</span>
+              <label className="form-field">
+                <span className="form-label">Label</span>
                 <input
                   required
                   value={recipeForm.label}
                   onChange={(e) => setRecipeForm({ ...recipeForm, label: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 />
               </label>
-              <label className="block">
-                <span className="text-slate-400">Input item</span>
+              <label className="form-field">
+                <span className="form-label">Input item</span>
                 <select
                   required
                   value={recipeForm.inputItemId}
                   onChange={(e) => setRecipeForm({ ...recipeForm, inputItemId: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 >
                   <option value="">Select…</option>
                   {items.map((item) => (
@@ -368,13 +369,13 @@ export default function CommercePage() {
                   ))}
                 </select>
               </label>
-              <label className="block">
-                <span className="text-slate-400">Output item</span>
+              <label className="form-field">
+                <span className="form-label">Output item</span>
                 <select
                   required
                   value={recipeForm.outputItemId}
                   onChange={(e) => setRecipeForm({ ...recipeForm, outputItemId: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                  className="form-control"
                 >
                   <option value="">Select…</option>
                   {items.map((item) => (
@@ -384,26 +385,23 @@ export default function CommercePage() {
                   ))}
                 </select>
               </label>
-              <button
-                type="submit"
-                className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200 hover:bg-cyan-500/30"
-              >
+              <button type="submit" className="btn btn-accent btn-sm">
                 Save recipe
               </button>
             </form>
-          </section>
+          </Panel>
 
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="font-semibold">Recipes ({recipes.length})</h3>
-            <div className="mt-4 space-y-3">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Recipes ({recipes.length})</h3>
+            <div className="panel-section space-y-3">
               {recipes.length === 0 ? (
-                <p className="text-sm text-slate-400">No crafting recipes yet.</p>
+                <p className="panel-subtext">No crafting recipes yet.</p>
               ) : (
                 recipes.map((recipe) => (
-                  <article key={recipe.id} className="rounded-lg border border-white/10 bg-[#0b1020] p-4 text-sm">
-                    <div className="font-medium text-cyan-200">{recipe.label}</div>
-                    <div className="text-xs text-slate-500">{recipe.id}</div>
-                    <p className="mt-2 text-slate-400">
+                  <article key={recipe.id} className="finding-card text-sm">
+                    <div className="font-medium">{recipe.label}</div>
+                    <div className="text-xs text-[var(--color-muted)]">{recipe.id}</div>
+                    <p className="mt-2 text-[var(--color-muted)]">
                       {recipe.inputs.map((input) => `${input.amount}x ${input.itemId}`).join(" + ")} →{" "}
                       {recipe.outputs.map((output) => `${output.amount}x ${output.itemId}`).join(", ")}
                     </p>
@@ -411,9 +409,9 @@ export default function CommercePage() {
                 ))
               )}
             </div>
-          </section>
+          </Panel>
         </div>
       )}
-    </div>
+    </PageStack>
   );
 }

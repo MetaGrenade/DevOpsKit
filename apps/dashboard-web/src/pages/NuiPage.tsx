@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface NuiResource {
@@ -67,7 +74,11 @@ export default function NuiPage() {
   async function runSync() {
     setBusy(true);
     setMessage(null);
-    const response = await fetch("/api/v1/nui/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    const response = await fetch("/api/v1/nui/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
     const payload = (await response.json()) as { message?: string; resources?: unknown[] };
     if (!response.ok) {
       setMessage(payload.message ?? "NUI sync failed");
@@ -95,75 +106,100 @@ export default function NuiPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading NUI resources…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading NUI resources…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">NUI Schema Sync</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage typed NUI bridge schemas.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="NUI Schema Sync"
+          description="Select an active workspace to manage typed NUI bridge schemas."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">NUI Schema Sync</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Keep `shared/nui-bridge.json`, Lua callbacks/messages, and TypeScript wrappers in sync across NUI resources.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI: <code className="text-slate-200">fdt nui sync</code> ·{" "}
-          <code className="text-slate-200">fdt nui validate</code> ·{" "}
-          <code className="text-slate-200">fdt nui add-callback</code>
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button type="button" disabled={busy} onClick={() => void runSync()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            {busy ? "Working…" : "Sync schemas"}
-          </button>
-          <button type="button" disabled={busy} onClick={() => void runValidate()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            Validate schemas
-          </button>
-        </div>
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">{message}</p>}
-      </section>
+    <PageStack>
+      <PageIntro
+        title="NUI Schema Sync"
+        description="Keep shared/nui-bridge.json, Lua callbacks/messages, and TypeScript wrappers in sync across NUI resources."
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void runSync()}
+              className="btn btn-accent btn-sm"
+            >
+              {busy ? "Working…" : "Sync schemas"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void runValidate()}
+              className="btn btn-secondary btn-sm"
+            >
+              Validate schemas
+            </button>
+          </div>
+        }
+      />
 
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-        <h3 className="text-lg font-semibold">NUI resources ({resources.length})</h3>
-        <div className="mt-4 space-y-2">
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt nui sync</code> ·{" "}
+          <code className="inline-code">fdt nui validate</code> ·{" "}
+          <code className="inline-code">fdt nui add-callback</code>
+        </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
+
+      <Panel className="panel-compact">
+        <h3 className="panel-heading">NUI resources ({resources.length})</h3>
+        <div className="panel-section space-y-2">
           {resources.length === 0 ? (
-            <p className="text-sm text-slate-400">No NUI resources with shared/nui-bridge.json found.</p>
+            <p className="panel-subtext">No NUI resources with shared/nui-bridge.json found.</p>
           ) : (
             resources.map((resource) => (
-              <article key={resource.resourceName} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+              <article key={resource.resourceName} className="finding-card text-sm">
                 <div className="font-medium">{resource.resourceName}</div>
-                <div className="text-xs text-slate-500">{resource.resourcePath}</div>
+                <div className="text-xs text-[var(--color-muted)]">{resource.resourcePath}</div>
               </article>
             ))
           )}
         </div>
-      </section>
+      </Panel>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="text-lg font-semibold">Validation summary</h3>
-          <p className="mt-1 text-sm text-slate-400">
-            {report.summary.synced}/{report.summary.resourcesChecked} in sync · {report.summary.errors} errors · {report.summary.warnings} warnings
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Validation summary</h3>
+          <p className="panel-subtext">
+            {report.summary.synced}/{report.summary.resourcesChecked} in sync · {report.summary.errors}{" "}
+            errors · {report.summary.warnings} warnings
           </p>
-          <div className="mt-4 space-y-2">
+          <div className="panel-section space-y-2">
             {report.resources.flatMap((resource) =>
               resource.findings.map((finding) => (
-                <article key={`${resource.resourceName}:${finding.code}`} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
-                  <div className="font-medium">{resource.resourceName} · {finding.code}</div>
-                  <p className="mt-1 text-slate-400">{finding.message}</p>
+                <article
+                  key={`${resource.resourceName}:${finding.code}`}
+                  className="finding-card text-sm"
+                >
+                  <div className="font-medium">
+                    {resource.resourceName} · {finding.code}
+                  </div>
+                  <p className="mt-1 text-[var(--color-muted)]">{finding.message}</p>
                 </article>
               )),
             )}
           </div>
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }

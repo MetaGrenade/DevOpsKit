@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface EconomyReport {
@@ -85,101 +94,121 @@ export default function EconomyPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading economy simulator…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading economy simulator…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Economy Simulator</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to compare job, business, and sink balance.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Economy Simulator"
+          description="Select an active workspace to compare job, business, and sink balance."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Economy Simulator</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Compare legal/illegal job income, business revenue, shared sinks, and vehicle affordability from workspace registries.
+    <PageStack>
+      <PageIntro
+        title="Economy Simulator"
+        description="Compare legal/illegal job income, business revenue, shared sinks, and vehicle affordability from workspace registries."
+        actions={
+          <div className="btn-row items-end" style={{ marginTop: 0 }}>
+            <label className="form-field">
+              <span className="form-label">Hours</span>
+              <input
+                type="number"
+                min={1}
+                value={hours}
+                onChange={(event) => setHours(event.target.value)}
+                className="form-control w-24"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void runSimulation()}
+              className="btn btn-accent btn-sm"
+            >
+              {busy ? "Simulating…" : "Run simulation"}
+            </button>
+          </div>
+        }
+      />
+
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
+          CLI: <code className="inline-code">fdt economy simulate --hours 4</code> ·{" "}
+          <code className="inline-code">fdt economy report</code>
         </p>
-        <p className="mt-3 text-sm text-slate-400">
-          CLI: <code className="text-slate-200">fdt economy simulate --hours 4</code> ·{" "}
-          <code className="text-slate-200">fdt economy report</code>
-        </p>
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="text-sm text-slate-300">
-            Hours
-            <input
-              type="number"
-              min={1}
-              value={hours}
-              onChange={(event) => setHours(event.target.value)}
-              className="ml-2 rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm"
-            />
-          </label>
-          <button type="button" disabled={busy} onClick={() => void runSimulation()} className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 hover:bg-cyan-500/30 disabled:opacity-50">
-            {busy ? "Simulating…" : "Run simulation"}
-          </button>
-        </div>
-        {message && <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">{message}</p>}
-      </section>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
 
       {report && (
         <>
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="text-lg font-semibold">Summary</h3>
-            <p className="mt-2 text-sm text-slate-400">
-              Profile {report.profileLabel} · {report.hoursSimulated}h · {report.summary.comparedActivities} activities compared · inflation risk {report.summary.inflationRisk}
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Summary</h3>
+            <p className="panel-subtext">
+              Profile {report.profileLabel} · {report.hoursSimulated}h ·{" "}
+              {report.summary.comparedActivities} activities compared · inflation risk{" "}
+              {report.summary.inflationRisk}
             </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <article className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">
-                <div className="text-slate-400">Top earner net/hour</div>
-                <div className="mt-1 text-lg font-semibold">${report.summary.topEarnerNetPerHour.toFixed(0)}</div>
-              </article>
-              <article className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">
-                <div className="text-slate-400">Median net/hour</div>
-                <div className="mt-1 text-lg font-semibold">${report.summary.medianNetPerHour.toFixed(0)}</div>
-              </article>
-              <article className="rounded-lg border border-white/10 bg-[#0b1020] px-4 py-3 text-sm">
-                <div className="text-slate-400">Shared sinks/hour</div>
-                <div className="mt-1 text-lg font-semibold">${report.summary.totalSinkCostPerHour.toFixed(0)}</div>
-              </article>
-            </div>
-          </section>
+            <StatGrid columns={3}>
+              <StatTile
+                label="Top earner net/hour"
+                value={`$${report.summary.topEarnerNetPerHour.toFixed(0)}`}
+              />
+              <StatTile
+                label="Median net/hour"
+                value={`$${report.summary.medianNetPerHour.toFixed(0)}`}
+              />
+              <StatTile
+                label="Shared sinks/hour"
+                value={`$${report.summary.totalSinkCostPerHour.toFixed(0)}`}
+              />
+            </StatGrid>
+          </Panel>
 
-          <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-            <h3 className="text-lg font-semibold">Income activities</h3>
-            <div className="mt-4 space-y-2">
+          <Panel className="panel-compact">
+            <h3 className="panel-heading">Income activities</h3>
+            <div className="panel-section space-y-2">
               {report.activities.slice(0, 12).map((activity) => (
-                <article key={activity.label} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+                <article key={activity.label} className="finding-card text-sm">
                   <div className="font-medium">{activity.label}</div>
-                  <div className="text-xs text-slate-500">
-                    {activity.category} · ${activity.netPerHour.toFixed(0)}/hr · ${activity.netForSession.toFixed(0)}/session
+                  <div className="text-xs text-[var(--color-muted)]">
+                    {activity.category} · ${activity.netPerHour.toFixed(0)}/hr · $
+                    {activity.netForSession.toFixed(0)}/session
                   </div>
                 </article>
               ))}
             </div>
-          </section>
+          </Panel>
 
           {report.affordability.length > 0 && (
-            <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-              <h3 className="text-lg font-semibold">Vehicle affordability</h3>
-              <div className="mt-4 space-y-2">
+            <Panel className="panel-compact">
+              <h3 className="panel-heading">Vehicle affordability</h3>
+              <div className="panel-section space-y-2">
                 {report.affordability.slice(0, 8).map((entry) => (
-                  <article key={entry.displayName} className="rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2 text-sm">
+                  <article key={entry.displayName} className="finding-card text-sm">
                     <div className="font-medium">{entry.displayName}</div>
-                    <div className="text-xs text-slate-500">
-                      ${entry.price.toLocaleString()} · {Number.isFinite(entry.hoursAtMedianIncome) ? `${entry.hoursAtMedianIncome}h at median income` : "n/a"}
+                    <div className="text-xs text-[var(--color-muted)]">
+                      ${entry.price.toLocaleString()} ·{" "}
+                      {Number.isFinite(entry.hoursAtMedianIncome)
+                        ? `${entry.hoursAtMedianIncome}h at median income`
+                        : "n/a"}
                     </div>
                   </article>
                 ))}
               </div>
-            </section>
+            </Panel>
           )}
         </>
       )}
-    </div>
+    </PageStack>
   );
 }

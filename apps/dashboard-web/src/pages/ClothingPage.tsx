@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  EmptyState,
+  PageAlert,
+  PageIntro,
+  PageStack,
+  Panel,
+  StatGrid,
+  StatTile,
+} from "../components/ui/page";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ClothingTexture {
@@ -52,14 +61,14 @@ const EMPTY_PACK = {
   resourceName: "",
 };
 
-function severityClass(severity: string): string {
+function severityBadgeClass(severity: string): string {
   switch (severity) {
     case "error":
-      return "text-rose-200 bg-rose-500/15";
+      return "finding-badge finding-badge-error";
     case "warning":
-      return "text-amber-200 bg-amber-500/15";
+      return "finding-badge finding-badge-warning";
     default:
-      return "text-slate-300 bg-slate-500/10";
+      return "finding-badge finding-badge-info";
   }
 }
 
@@ -176,113 +185,116 @@ export default function ClothingPage() {
   }
 
   if (loading) {
-    return <p className="text-sm text-slate-400">Loading clothing packs…</p>;
+    return (
+      <PageStack>
+        <p className="panel-subtext">Loading clothing packs…</p>
+      </PageStack>
+    );
   }
 
   if (!activeWorkspace) {
     return (
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Clothing Pack Manager</h2>
-        <p className="mt-2 text-sm text-slate-400">Select an active workspace to manage clothing packs.</p>
-      </section>
+      <PageStack>
+        <EmptyState
+          title="Clothing Pack Manager"
+          description="Select an active workspace to manage clothing packs."
+        />
+      </PageStack>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-[#111831] p-8">
-        <h2 className="text-xl font-semibold">Clothing Pack Manager</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
-          Catalog clothing resources, index drawable/texture pairs from stream folders, and flag duplicate slot
-          assignments or missing previews in{" "}
-          <code className="rounded bg-white/5 px-1.5 py-0.5">.fdt/reports/clothing-conflicts.json</code>.
-        </p>
-        <p className="mt-3 text-sm text-slate-400">
+    <PageStack>
+      <PageIntro
+        title="Clothing Pack Manager"
+        description={
+          <>
+            Catalog clothing resources, index drawable/texture pairs from stream folders, and flag duplicate slot
+            assignments or missing previews in{" "}
+            <code className="inline-code">.fdt/reports/clothing-conflicts.json</code>.
+          </>
+        }
+        actions={
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button
+              type="button"
+              disabled={busy || packs.length === 0}
+              onClick={() => void scanPack()}
+              className="btn btn-accent btn-sm"
+            >
+              Scan all packs
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void runConflicts()}
+              className="btn btn-secondary btn-sm"
+            >
+              Run conflict check
+            </button>
+          </div>
+        }
+      />
+
+      <Panel className="panel-compact">
+        <p className="panel-subtext">
           CLI:{" "}
-          <code className="text-slate-200">fdt clothing pack-new --id pack_a --label &quot;Pack A&quot; --resource meta_clothing_a</code>{" "}
-          · <code className="text-slate-200">fdt clothing scan</code> ·{" "}
-          <code className="text-slate-200">fdt clothing conflicts</code>
+          <code className="inline-code">fdt clothing pack-new --id pack_a --label &quot;Pack A&quot; --resource meta_clothing_a</code>{" "}
+          · <code className="inline-code">fdt clothing scan</code> ·{" "}
+          <code className="inline-code">fdt clothing conflicts</code>
         </p>
+        {message && <PageAlert>{message}</PageAlert>}
+      </Panel>
 
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy || packs.length === 0}
-            onClick={() => void scanPack()}
-            className="rounded-lg bg-cyan-500/20 px-4 py-2 text-sm font-medium text-cyan-200 disabled:opacity-50"
-          >
-            Scan all packs
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void runConflicts()}
-            className="rounded-lg bg-emerald-500/20 px-4 py-2 text-sm font-medium text-emerald-200 disabled:opacity-50"
-          >
-            Run conflict check
-          </button>
-        </div>
-
-        {message && (
-          <p className="mt-4 rounded-lg border border-white/10 bg-[#0b1020] px-4 py-2 text-sm text-slate-200">
-            {message}
-          </p>
-        )}
-      </section>
-
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">New Pack</h3>
-          <form className="mt-4 space-y-3 text-sm" onSubmit={createPack}>
-            <label className="block">
-              <span className="text-slate-400">ID</span>
+      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">New Pack</h3>
+          <form className="form-stack panel-section" onSubmit={createPack}>
+            <label className="form-field">
+              <span className="form-label">ID</span>
               <input
                 required
                 value={packForm.id}
                 onChange={(e) => setPackForm({ ...packForm, id: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               />
             </label>
-            <label className="block">
-              <span className="text-slate-400">Label</span>
+            <label className="form-field">
+              <span className="form-label">Label</span>
               <input
                 required
                 value={packForm.label}
                 onChange={(e) => setPackForm({ ...packForm, label: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               />
             </label>
-            <label className="block">
-              <span className="text-slate-400">Resource name</span>
+            <label className="form-field">
+              <span className="form-label">Resource name</span>
               <input
                 required
                 value={packForm.resourceName}
                 onChange={(e) => setPackForm({ ...packForm, resourceName: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1020] px-3 py-2"
+                className="form-control"
               />
             </label>
-            <button
-              type="submit"
-              disabled={busy}
-              className="rounded-lg bg-cyan-500/20 px-4 py-2 font-medium text-cyan-200 disabled:opacity-50"
-            >
+            <button type="submit" disabled={busy} className="btn btn-accent btn-sm">
               Create pack
             </button>
           </form>
-        </section>
+        </Panel>
 
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Packs ({packs.length})</h3>
-          <div className="mt-4 space-y-4">
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Packs ({packs.length})</h3>
+          <div className="panel-section space-y-3">
             {packs.length === 0 ? (
-              <p className="text-sm text-slate-400">No clothing packs registered yet.</p>
+              <p className="panel-subtext">No clothing packs registered yet.</p>
             ) : (
               packs.map((pack) => (
-                <article key={pack.id} className="rounded-lg border border-white/10 bg-[#0b1020] p-4 text-sm">
+                <article key={pack.id} className="finding-card text-sm">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <div className="font-medium text-cyan-200">{pack.label}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="font-medium">{pack.label}</div>
+                      <div className="text-xs text-[var(--color-muted)]">
                         {pack.id} · {pack.resourceName} · {pack.status} · {pack.drawables.length} drawables
                       </div>
                     </div>
@@ -290,13 +302,13 @@ export default function ClothingPage() {
                       type="button"
                       disabled={busy}
                       onClick={() => void scanPack(pack.id)}
-                      className="text-xs text-cyan-300"
+                      className="btn btn-secondary btn-sm"
                     >
                       Scan
                     </button>
                   </div>
                   {pack.drawables.length > 0 && (
-                    <ul className="mt-3 space-y-1 text-xs text-slate-400">
+                    <ul className="list-plain mt-2 text-xs text-[var(--color-muted)]">
                       {pack.drawables.slice(0, 5).map((drawable) => (
                         <li key={drawable.id}>
                           {drawable.label ?? drawable.fileName} · {drawable.category} · {drawable.gender} ·{" "}
@@ -313,63 +325,49 @@ export default function ClothingPage() {
               ))
             )}
           </div>
-        </section>
+        </Panel>
       </div>
 
       {report && (
-        <section className="rounded-2xl border border-white/10 bg-[#111831] p-6">
-          <h3 className="font-semibold">Validation findings</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-4">
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-              <div className="text-xs text-slate-500">Errors</div>
-              <div className="text-xl font-semibold text-rose-300">{report.summary.errors}</div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-              <div className="text-xs text-slate-500">Warnings</div>
-              <div className="text-xl font-semibold text-amber-300">{report.summary.warnings}</div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-              <div className="text-xs text-slate-500">Drawables</div>
-              <div className="text-xl font-semibold text-cyan-200">{report.summary.drawablesChecked}</div>
-            </div>
-            <div className="rounded-lg border border-white/10 bg-[#0b1020] p-3">
-              <div className="text-xs text-slate-500">Packs</div>
-              <div className="text-xl font-semibold text-slate-200">{report.summary.packsChecked}</div>
-            </div>
-          </div>
+        <Panel className="panel-compact">
+          <h3 className="panel-heading">Validation findings</h3>
+          <StatGrid columns={4}>
+            <StatTile label="Errors" value={report.summary.errors} tone="danger" />
+            <StatTile label="Warnings" value={report.summary.warnings} tone="warning" />
+            <StatTile label="Drawables" value={report.summary.drawablesChecked} />
+            <StatTile label="Packs" value={report.summary.packsChecked} tone="muted" />
+          </StatGrid>
 
           {report.findings.length > 0 ? (
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-slate-500">
+            <div className="panel-section data-table-wrap">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <th className="px-3 py-2">Severity</th>
-                    <th className="px-3 py-2">Code</th>
-                    <th className="px-3 py-2">Message</th>
-                    <th className="px-3 py-2">Pack</th>
+                    <th>Severity</th>
+                    <th>Code</th>
+                    <th>Message</th>
+                    <th>Pack</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report.findings.map((finding) => (
-                    <tr key={finding.id} className="border-t border-white/5">
-                      <td className="px-3 py-2">
-                        <span className={`rounded px-2 py-0.5 text-xs ${severityClass(finding.severity)}`}>
-                          {finding.severity}
-                        </span>
+                    <tr key={finding.id}>
+                      <td>
+                        <span className={severityBadgeClass(finding.severity)}>{finding.severity}</span>
                       </td>
-                      <td className="px-3 py-2">{finding.code}</td>
-                      <td className="px-3 py-2 text-slate-300">{finding.message}</td>
-                      <td className="px-3 py-2 text-slate-500">{finding.packId ?? "—"}</td>
+                      <td>{finding.code}</td>
+                      <td>{finding.message}</td>
+                      <td className="text-[var(--color-muted)]">{finding.packId ?? "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">No findings — run a conflict check after scanning packs.</p>
+            <p className="panel-subtext panel-section">No findings — run a conflict check after scanning packs.</p>
           )}
-        </section>
+        </Panel>
       )}
-    </div>
+    </PageStack>
   );
 }
