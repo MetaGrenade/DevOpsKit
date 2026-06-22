@@ -17,12 +17,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -37,15 +35,15 @@ jobs:
           --report-only validate
 
       - name: Upload CI pipeline report
-        if: always()
+        if: always() && hashFiles('./.fdt/reports/ci-pipeline.json') != ''
         uses: actions/upload-artifact@v4
         with:
           name: fdt-ci-pipeline
           path: ./.fdt/reports/ci-pipeline.json
 
       - name: Upload security SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('./.fdt/reports/security-audit.sarif.json') != ''
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ./.fdt/reports/security-audit.sarif.json
           category: fdt-security
