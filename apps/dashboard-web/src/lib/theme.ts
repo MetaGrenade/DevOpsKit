@@ -4,8 +4,8 @@ export type ResolvedTheme = "light" | "dark";
 export const THEME_STORAGE_KEY = "fdt.theme";
 
 const THEME_COLORS: Record<ResolvedTheme, string> = {
-  light: "#f1f5f9",
-  dark: "#060912",
+  light: "#e2e8f0",
+  dark: "#060a14",
 };
 
 export function getStoredThemeMode(): ThemeMode {

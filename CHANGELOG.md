@@ -15,10 +15,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Dashboard typography — **Plus Jakarta Sans** (UI), **Outfit** (headings), and **JetBrains Mono** (code); unified type scale, label tracking, and heading letter-spacing.
+- Dashboard contrast — stronger ink/muted/label tokens, panel shadows, and borders in both light and dark themes; light canvas shifted to `#e2e8f0` for clearer surface separation.
 - Dashboard app shell top bar — page title and theme toggle only; workspace name and API status remain in the sidebar.
 - All dashboard pages migrated from legacy hardcoded Tailwind (`bg-[#…]`, `border-white/10`, `text-slate-*`) to the semantic theme system.
 - **Overview** redesigned from a module status grid to a feature list and workflow breakdown.
 - Sidebar item order, group labels, and descriptions updated to match regular FDT usage.
+- Dashboard scroll performance — removed sticky topbar `backdrop-filter`, lighter panel shadows, solid topbar backgrounds, and `content-visibility` on off-screen page sections.
+- Dashboard scrollbars — themed thin scrollbars on main content, sidebar, tables, and modals (Firefox + WebKit).
 
 ### Fixed
 
