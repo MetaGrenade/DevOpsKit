@@ -11,6 +11,7 @@ import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface PerformanceResourceMetric {
@@ -76,7 +77,14 @@ export default function PerformancePage() {
   const [report, setReport] = useState<PerformanceComparisonReport | null>(null);
   const [reportPath, setReportPath] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
-  const [changeFilter, setChangeFilter] = useState("");
+  const {
+    query: changeFilter,
+    setQuery: setChangeFilter,
+    views: changeViews,
+    saveView: saveChangeView,
+    applyView: applyChangeView,
+    deleteView: deleteChangeView,
+  } = useTableFilter("performance.changes");
   const [importJson, setImportJson] = useState("");
   const [baselineId, setBaselineId] = useState("");
   const [targetId, setTargetId] = useState("");
@@ -253,6 +261,7 @@ export default function PerformancePage() {
         <EmptyState
           title="Performance Dashboard"
           description="Select an active workspace to track profiler snapshots."
+          variant="workspace"
         />
       </PageStack>
     );
@@ -401,6 +410,12 @@ export default function PerformancePage() {
                 onChange: setChangeFilter,
                 placeholder: "Filter by resource, metric, direction…",
                 ariaLabel: "Filter metric changes",
+              }}
+              views={{
+                items: changeViews,
+                onApply: applyChangeView,
+                onSave: saveChangeView,
+                onDelete: deleteChangeView,
               }}
               count={`${filteredChanges.length} of ${report.changes.length}`}
             />

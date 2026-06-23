@@ -11,6 +11,7 @@ import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface EconomyReport {
@@ -42,7 +43,14 @@ export default function EconomyPage() {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [report, setReport] = useState<EconomyReport | null>(null);
   const [hours, setHours] = useState("4");
-  const [activityFilter, setActivityFilter] = useState("");
+  const {
+    query: activityFilter,
+    setQuery: setActivityFilter,
+    views: activityViews,
+    saveView: saveActivityView,
+    applyView: applyActivityView,
+    deleteView: deleteActivityView,
+  } = useTableFilter("economy.activities");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
@@ -170,6 +178,7 @@ export default function EconomyPage() {
         <EmptyState
           title="Economy Simulator"
           description="Select an active workspace to compare job, business, and sink balance."
+          variant="workspace"
         />
       </PageStack>
     );
@@ -245,6 +254,12 @@ export default function EconomyPage() {
                   onChange: setActivityFilter,
                   placeholder: "Filter activities…",
                   ariaLabel: "Filter income activities",
+                }}
+                views={{
+                  items: activityViews,
+                  onApply: applyActivityView,
+                  onSave: saveActivityView,
+                  onDelete: deleteActivityView,
                 }}
                 count={`${filteredActivities.length} of ${report.activities.length}`}
               />

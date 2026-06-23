@@ -257,6 +257,7 @@ export default function QaPage() {
         <EmptyState
           title="QA Scenario Runner"
           description="Select an active workspace to manage QA scenarios and runs."
+          variant="workspace"
         />
       </PageStack>
     );

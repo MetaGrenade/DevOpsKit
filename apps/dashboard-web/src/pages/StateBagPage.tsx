@@ -62,6 +62,7 @@ export default function StateBagPage() {
         <EmptyState
           title="State Bag Visualizer"
           description="Select an active workspace to review imported debug snapshots."
+          variant="workspace"
         />
       </PageStack>
     );

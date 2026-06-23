@@ -158,6 +158,7 @@ export default function VehiclesPage() {
         <EmptyState
           title="Vehicle Pack Builder"
           description="Select an active workspace to manage vehicle packs."
+          variant="workspace"
         />
       </PageStack>
     );

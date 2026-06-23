@@ -364,7 +364,7 @@ export default function ReleasesPage() {
   if (!activeWorkspace) {
     return (
       <PageStack>
-        <EmptyState title="Releases" description="Select an active workspace to manage releases." />
+        <EmptyState title="Releases" description="Select an active workspace to manage releases." variant="workspace" />
       </PageStack>
     );
   }

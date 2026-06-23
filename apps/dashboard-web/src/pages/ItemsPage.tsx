@@ -4,11 +4,13 @@ import {
   PageIntro,
   PageStack,
   Panel,
+  ZeroDataPanel,
 } from "../components/ui/page";
 import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Item {
@@ -64,7 +66,14 @@ export default function ItemsPage() {
   const [frameworkProfile, setFrameworkProfile] = useState<FrameworkProfileSummary | null>(null);
   const [exportPreview, setExportPreview] = useState<ExportFile[] | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [itemFilter, setItemFilter] = useState("");
+  const {
+    query: itemFilter,
+    setQuery: setItemFilter,
+    views: itemViews,
+    saveView: saveItemView,
+    applyView: applyItemView,
+    deleteView: deleteItemView,
+  } = useTableFilter("items");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -247,7 +256,11 @@ export default function ItemsPage() {
   if (!activeWorkspace) {
     return (
       <PageStack>
-        <EmptyState title="Item Workbench" description="Select or register a workspace first." />
+        <EmptyState
+          title="Item Workbench"
+          description="Select or register a workspace first."
+          variant="workspace"
+        />
       </PageStack>
     );
   }
@@ -352,7 +365,11 @@ export default function ItemsPage() {
       <Panel className="panel-compact">
         <h3 className="panel-heading">Registry</h3>
         {items.length === 0 ? (
-          <p className="panel-subtext">No items yet. Add one above or import via CLI.</p>
+          <ZeroDataPanel
+            title="No items yet"
+            description="Add one above or import via CLI."
+            variant="content"
+          />
         ) : (
           <div className="panel-section">
             <Toolbar
@@ -361,6 +378,12 @@ export default function ItemsPage() {
                 onChange: setItemFilter,
                 placeholder: "Filter items…",
                 ariaLabel: "Filter item registry",
+              }}
+              views={{
+                items: itemViews,
+                onApply: applyItemView,
+                onSave: saveItemView,
+                onDelete: deleteItemView,
               }}
               count={`${filteredItems.length} of ${items.length}`}
             />

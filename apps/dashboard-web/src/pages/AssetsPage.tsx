@@ -12,6 +12,7 @@ import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ResourceSummary {
@@ -94,7 +95,14 @@ export default function AssetsPage() {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [report, setReport] = useState<AssetAuditorReport | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
-  const [rankingFilter, setRankingFilter] = useState("");
+  const {
+    query: rankingFilter,
+    setQuery: setRankingFilter,
+    views: rankingViews,
+    saveView: saveRankingView,
+    applyView: applyRankingView,
+    deleteView: deleteRankingView,
+  } = useTableFilter("assets.ranking");
 
   async function loadReport() {
     setStatus("loading");
@@ -164,7 +172,7 @@ export default function AssetsPage() {
   if (!activeWorkspace) {
     return (
       <PageStack>
-        <EmptyState title="Asset Auditor" description="Select or register a workspace first." />
+        <EmptyState title="Asset Auditor" description="Select or register a workspace first." variant="workspace" />
       </PageStack>
     );
   }
@@ -219,6 +227,12 @@ export default function AssetsPage() {
                     onChange: setRankingFilter,
                     placeholder: "Filter resources…",
                     ariaLabel: "Filter resource size ranking",
+                  }}
+                  views={{
+                    items: rankingViews,
+                    onApply: applyRankingView,
+                    onSave: saveRankingView,
+                    onDelete: deleteRankingView,
                   }}
                   count={`${filteredSummaries.length} of ${report.resourceSummaries.length}`}
                 />

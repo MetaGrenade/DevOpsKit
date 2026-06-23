@@ -25,10 +25,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Onboarding checklist** on Overview — `GET /api/v1/onboarding/status` drives a progress ring with deep links to each step.
 - **Notification center** — bell icon in the top bar with toast history, unread count, mark-all-read, and clear.
 - **Playwright e2e** — shell smoke tests and light/dark overview snapshots (`test:e2e` script).
+- **Saved table views** — `useTableFilter` persists the active filter per table scope; named views are saved/applied/deleted from a **Views** menu on every `DataTable` toolbar.
+- **Empty-state illustrations** — theme-aware SVG illustrations on `EmptyState` (no workspace) and `ZeroDataPanel` (empty registries).
+- **Playwright workflows** — workspace switcher, Items create/delete smoke, and saved-view persistence (`e2e/workflows.spec.ts`).
 
 ### Changed
 
-- **Commerce**, **Economy**, and **Domains** (vehicles tab) — migrated to `DataTable`/`Toolbar` with toasts and skeleton loaders.
+- All `DataTable` toolbars (Resources, Assets, Items, Zones, Performance, Commerce, Economy, Domains) now include saved views and auto-restore the last filter from `localStorage`.
+- **EmptyState** panels across every module now show illustrated artwork; zero-data registry panels use **ZeroDataPanel**.
 - **Docs & Help** — new API reference section linking to the in-app Swagger viewer.
 - Page loader now renders skeleton placeholders instead of a spinner for better perceived performance.
 - Data-dense pages — **Resources**, **Releases**, **QA**, **Assets**, **Items**, **Performance**, **Zones**, and **Domains** — now surface action results through the toast system and show skeleton loaders while data loads (replacing inline banners and "Loading…" text).

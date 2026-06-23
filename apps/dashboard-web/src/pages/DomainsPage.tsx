@@ -4,11 +4,13 @@ import {
   PageIntro,
   PageStack,
   Panel,
+  ZeroDataPanel,
 } from "../components/ui/page";
 import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Vehicle {
@@ -98,7 +100,14 @@ export default function DomainsPage() {
   const [mapForm, setMapForm] = useState(EMPTY_MAP);
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [exportPreview, setExportPreview] = useState<ExportFile[] | null>(null);
-  const [vehicleFilter, setVehicleFilter] = useState("");
+  const {
+    query: vehicleFilter,
+    setQuery: setVehicleFilter,
+    views: vehicleViews,
+    saveView: saveVehicleView,
+    applyView: applyVehicleView,
+    deleteView: deleteVehicleView,
+  } = useTableFilter("domains.vehicles");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -340,6 +349,7 @@ export default function DomainsPage() {
         <EmptyState
           title="Domain Builders"
           description="Select an active workspace to manage vehicles, businesses, and maps."
+          variant="workspace"
         />
       </PageStack>
     );
@@ -415,7 +425,7 @@ export default function DomainsPage() {
           <Panel className="panel-compact">
             <h3 className="panel-heading">Vehicle Registry</h3>
             {vehicles.length === 0 ? (
-              <p className="panel-subtext panel-section">No vehicles yet.</p>
+              <ZeroDataPanel title="No vehicles yet" description="Add one in the form or import from your resource tree." variant="content" />
             ) : (
               <div className="panel-section">
                 <Toolbar
@@ -424,6 +434,12 @@ export default function DomainsPage() {
                     onChange: setVehicleFilter,
                     placeholder: "Filter vehicles…",
                     ariaLabel: "Filter vehicle registry",
+                  }}
+                  views={{
+                    items: vehicleViews,
+                    onApply: applyVehicleView,
+                    onSave: saveVehicleView,
+                    onDelete: deleteVehicleView,
                   }}
                   count={`${filteredVehicles.length} of ${vehicles.length}`}
                 />

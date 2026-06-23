@@ -127,6 +127,7 @@ export default function WorldPage() {
         <EmptyState
           title="World Tools"
           description="Select an active workspace to manage blips, props, and doors."
+          variant="workspace"
         />
       </PageStack>
     );

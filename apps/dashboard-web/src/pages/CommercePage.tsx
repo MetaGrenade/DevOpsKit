@@ -4,11 +4,13 @@ import {
   PageIntro,
   PageStack,
   Panel,
+  ZeroDataPanel,
 } from "../components/ui/page";
 import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ItemOption {
@@ -66,8 +68,22 @@ export default function CommercePage() {
   const [recipes, setRecipes] = useState<CraftingRecipe[]>([]);
   const [shopForm, setShopForm] = useState(EMPTY_SHOP);
   const [recipeForm, setRecipeForm] = useState(EMPTY_RECIPE);
-  const [shopFilter, setShopFilter] = useState("");
-  const [recipeFilter, setRecipeFilter] = useState("");
+  const {
+    query: shopFilter,
+    setQuery: setShopFilter,
+    views: shopViews,
+    saveView: saveShopView,
+    applyView: applyShopView,
+    deleteView: deleteShopView,
+  } = useTableFilter("commerce.shops");
+  const {
+    query: recipeFilter,
+    setQuery: setRecipeFilter,
+    views: recipeViews,
+    saveView: saveRecipeView,
+    applyView: applyRecipeView,
+    deleteView: deleteRecipeView,
+  } = useTableFilter("commerce.recipes");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -268,6 +284,7 @@ export default function CommercePage() {
         <EmptyState
           title="Shop & Crafting Builders"
           description="Select an active workspace to manage shops and crafting recipes."
+          variant="workspace"
         />
       </PageStack>
     );
@@ -343,11 +360,17 @@ export default function CommercePage() {
           <Panel className="panel-compact">
             <h3 className="panel-heading">Shops</h3>
             {shops.length === 0 ? (
-              <p className="panel-subtext panel-section">No shops yet.</p>
+              <ZeroDataPanel title="No shops yet" description="Create one in the form on the left." variant="content" />
             ) : (
               <div className="panel-section">
                 <Toolbar
                   search={{ value: shopFilter, onChange: setShopFilter, placeholder: "Filter shops…", ariaLabel: "Filter shops" }}
+                  views={{
+                    items: shopViews,
+                    onApply: applyShopView,
+                    onSave: saveShopView,
+                    onDelete: deleteShopView,
+                  }}
                   count={`${filteredShops.length} of ${shops.length}`}
                 />
                 <DataTable columns={shopColumns} rows={filteredShops} getRowKey={(shop) => shop.id} emptyMessage="No shops match your filter." />
@@ -399,11 +422,17 @@ export default function CommercePage() {
           <Panel className="panel-compact">
             <h3 className="panel-heading">Recipes</h3>
             {recipes.length === 0 ? (
-              <p className="panel-subtext panel-section">No crafting recipes yet.</p>
+              <ZeroDataPanel title="No crafting recipes yet" description="Create one in the form on the left." variant="content" />
             ) : (
               <div className="panel-section">
                 <Toolbar
                   search={{ value: recipeFilter, onChange: setRecipeFilter, placeholder: "Filter recipes…", ariaLabel: "Filter recipes" }}
+                  views={{
+                    items: recipeViews,
+                    onApply: applyRecipeView,
+                    onSave: saveRecipeView,
+                    onDelete: deleteRecipeView,
+                  }}
                   count={`${filteredRecipes.length} of ${recipes.length}`}
                 />
                 <DataTable columns={recipeColumns} rows={filteredRecipes} getRowKey={(recipe) => recipe.id} emptyMessage="No recipes match your filter." />

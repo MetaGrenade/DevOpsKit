@@ -5,11 +5,13 @@ import {
   PageIntro,
   PageStack,
   Panel,
+  ZeroDataPanel,
 } from "../components/ui/page";
 import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ZoneCoord {
@@ -53,7 +55,14 @@ export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [importJson, setImportJson] = useState("");
-  const [zoneFilter, setZoneFilter] = useState("");
+  const {
+    query: zoneFilter,
+    setQuery: setZoneFilter,
+    views: zoneViews,
+    saveView: saveZoneView,
+    applyView: applyZoneView,
+    deleteView: deleteZoneView,
+  } = useTableFilter("zones");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -226,7 +235,7 @@ export default function ZonesPage() {
   if (!activeWorkspace) {
     return (
       <PageStack>
-        <EmptyState title="Zones" description="Select an active workspace to manage zones." />
+        <EmptyState title="Zones" description="Select an active workspace to manage zones." variant="workspace" />
       </PageStack>
     );
   }
@@ -403,7 +412,7 @@ export default function ZonesPage() {
       <Panel className="panel-compact">
         <h3 className="panel-heading">Registered Zones</h3>
         {zones.length === 0 ? (
-          <p className="panel-subtext panel-section">No zones yet.</p>
+          <ZeroDataPanel title="No zones yet" description="Create one in the form or import from devtools export." variant="content" />
         ) : (
           <div className="panel-section">
             <Toolbar
@@ -412,6 +421,12 @@ export default function ZonesPage() {
                 onChange: setZoneFilter,
                 placeholder: "Filter zones…",
                 ariaLabel: "Filter registered zones",
+              }}
+              views={{
+                items: zoneViews,
+                onApply: applyZoneView,
+                onSave: saveZoneView,
+                onDelete: deleteZoneView,
               }}
               count={`${filteredZones.length} of ${zones.length}`}
             />

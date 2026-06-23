@@ -195,6 +195,7 @@ export default function MapsPage() {
         <EmptyState
           title="Map / MLO Packaging Assistant"
           description="Select an active workspace to manage map packages."
+          variant="workspace"
         />
       </PageStack>
     );

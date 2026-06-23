@@ -162,7 +162,7 @@ export default function SecurityPage() {
   if (!activeWorkspace) {
     return (
       <PageStack>
-        <EmptyState title="Security" description="Select an active workspace to view security findings." />
+        <EmptyState title="Security" description="Select an active workspace to view security findings." variant="workspace" />
       </PageStack>
     );
   }

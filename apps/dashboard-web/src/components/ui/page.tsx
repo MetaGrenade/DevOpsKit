@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
 import Panel, { PageIntro } from "./Panel";
+import { EmptyStateIllustration, type EmptyStateVariant } from "./EmptyStateIllustration";
+
+export type { EmptyStateVariant };
+export { EmptyStateIllustration, ZeroDataPanel } from "./EmptyStateIllustration";
 
 export function PageStack({ children, compact = true }: { children: ReactNode; compact?: boolean }) {
   return <div className={`page-stack ${compact ? "page-stack-compact" : ""}`}>{children}</div>;
@@ -53,11 +57,23 @@ export function NotePanel({ title, children }: { title?: string; children: React
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description?: ReactNode }) {
+export function EmptyState({
+  title,
+  description,
+  variant = "workspace",
+  action,
+}: {
+  title: string;
+  description?: ReactNode;
+  variant?: EmptyStateVariant;
+  action?: ReactNode;
+}) {
   return (
-    <Panel className="panel-dashed panel-compact">
+    <Panel className="panel-dashed panel-compact empty-state">
+      <EmptyStateIllustration variant={variant} />
       <h2 className="panel-heading">{title}</h2>
       {description && <p className="panel-subtext">{description}</p>}
+      {action && <div className="empty-state-action">{action}</div>}
     </Panel>
   );
 }

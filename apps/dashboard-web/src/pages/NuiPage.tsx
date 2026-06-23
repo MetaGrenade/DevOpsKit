@@ -119,6 +119,7 @@ export default function NuiPage() {
         <EmptyState
           title="NUI Schema Sync"
           description="Select an active workspace to manage typed NUI bridge schemas."
+          variant="workspace"
         />
       </PageStack>
     );

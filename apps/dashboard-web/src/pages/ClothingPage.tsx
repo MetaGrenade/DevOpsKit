@@ -198,6 +198,7 @@ export default function ClothingPage() {
         <EmptyState
           title="Clothing Pack Manager"
           description="Select an active workspace to manage clothing packs."
+          variant="workspace"
         />
       </PageStack>
     );

@@ -11,6 +11,7 @@ import { SkeletonText } from "../components/ui/primitives";
 import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
 import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
+import { useTableFilter } from "../hooks/useTableFilter";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Finding {
@@ -79,7 +80,14 @@ export default function ResourcesPage() {
   const [reportStatus, setReportStatus] = useState<"loading" | "ready" | "missing" | "error">(
     "loading",
   );
-  const [inventoryFilter, setInventoryFilter] = useState("");
+  const {
+    query: inventoryFilter,
+    setQuery: setInventoryFilter,
+    views: inventoryViews,
+    saveView: saveInventoryView,
+    applyView: applyInventoryView,
+    deleteView: deleteInventoryView,
+  } = useTableFilter("resources.inventory");
 
   async function loadActiveWorkspace() {
     const response = await fetch("/api/v1/workspaces/active");
@@ -297,6 +305,12 @@ export default function ResourcesPage() {
                   onChange: setInventoryFilter,
                   placeholder: "Filter resources…",
                   ariaLabel: "Filter resource inventory",
+                }}
+                views={{
+                  items: inventoryViews,
+                  onApply: applyInventoryView,
+                  onSave: saveInventoryView,
+                  onDelete: deleteInventoryView,
                 }}
                 count={`${filteredResources.length} of ${report.resources.length}`}
               />

@@ -115,6 +115,7 @@ export default function GraphPage() {
         <EmptyState
           title="Dependency Graph"
           description="Select an active workspace to inspect resource dependencies."
+          variant="workspace"
         />
       </PageStack>
     );

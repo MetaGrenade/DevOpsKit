@@ -125,6 +125,7 @@ export default function CiPage() {
         <EmptyState
           title="CI / CD Integration"
           description="Select an active workspace to view CI gate results."
+          variant="workspace"
         />
       </PageStack>
     );

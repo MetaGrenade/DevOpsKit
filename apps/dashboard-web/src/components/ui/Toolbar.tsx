@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { SearchIcon } from "../icons";
+import SavedViewsMenu from "./SavedViewsMenu";
+import type { SavedTableView } from "../../hooks/useTableFilter";
 
 interface ToolbarProps {
   search?: {
@@ -8,11 +10,17 @@ interface ToolbarProps {
     placeholder?: string;
     ariaLabel?: string;
   };
+  views?: {
+    items: SavedTableView[];
+    onApply: (view: SavedTableView) => void;
+    onSave: (label: string) => boolean;
+    onDelete: (id: string) => void;
+  };
   count?: ReactNode;
   children?: ReactNode;
 }
 
-export default function Toolbar({ search, count, children }: ToolbarProps) {
+export default function Toolbar({ search, views, count, children }: ToolbarProps) {
   return (
     <div className="toolbar">
       <div className="toolbar-lead">
@@ -31,6 +39,14 @@ export default function Toolbar({ search, count, children }: ToolbarProps) {
               spellCheck={false}
             />
           </div>
+        )}
+        {views && (
+          <SavedViewsMenu
+            views={views.items}
+            onApply={views.onApply}
+            onSave={views.onSave}
+            onDelete={views.onDelete}
+          />
         )}
         {count !== undefined && <span className="toolbar-count">{count}</span>}
       </div>
