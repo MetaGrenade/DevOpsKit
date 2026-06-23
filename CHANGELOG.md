@@ -18,10 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Shared **ThemeProvider** context so the top-bar toggle and command palette stay in sync.
 - New UI primitives — `Kbd`, `Tooltip`, `Skeleton` / `SkeletonText`, and `SegmentedControl`.
 - Design system v2 tokens — elevation ramp (`--surface-1..3`), accent ramp, motion/easing tokens, focus-visible ring system, and a max-width content container.
+- Reusable **`DataTable`** primitive with dependency-free row virtualization (windowing) and a sticky header for large datasets, plus a **`Toolbar`** primitive with built-in filter search and result counts.
+- **Resources** resource inventory is now filterable and virtualized, so large servers render smoothly.
 
 ### Changed
 
 - Page loader now renders skeleton placeholders instead of a spinner for better perceived performance.
+- **Resources**, **Releases**, and **QA** pages now surface action results through the toast system and show skeleton loaders while data loads (replacing inline banners and "Loading…" text).
 - Dashboard typography — **Plus Jakarta Sans** (UI), **Outfit** (headings), and **JetBrains Mono** (code); unified type scale, label tracking, and heading letter-spacing.
 - Dashboard contrast — stronger ink/muted/label tokens, panel shadows, and borders in both light and dark themes; light canvas shifted to `#e2e8f0` for clearer surface separation.
 - Dashboard app shell top bar — page title and theme toggle only; workspace name and API status remain in the sidebar.

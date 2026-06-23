@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import {
   EmptyState,
   NotePanel,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
   StatGrid,
   StatTile,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ReleaseValidationSummary {
@@ -142,13 +143,13 @@ function perfStatusTone(status: PerformanceReleaseSummary["status"]): "success" 
 }
 
 export default function ReleasesPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [releases, setReleases] = useState<Release[]>([]);
   const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
   const [createVersion, setCreateVersion] = useState("0.1.0");
   const [createEnvironment, setCreateEnvironment] = useState("dev");
   const [statusNote, setStatusNote] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [qaSummary, setQaSummary] = useState<QaReleaseSummary | null>(null);
   const [qaRuns, setQaRuns] = useState<QaRunSummary[]>([]);
@@ -161,7 +162,6 @@ export default function ReleasesPage() {
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -183,7 +183,11 @@ export default function ReleasesPage() {
         }
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load releases",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -254,7 +258,6 @@ export default function ReleasesPage() {
 
   async function handleCreateRelease(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const response = await fetch("/api/v1/releases", {
       method: "POST",
@@ -267,17 +270,19 @@ export default function ReleasesPage() {
 
     const payload = (await response.json()) as { message?: string; release?: Release };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to create release");
+      notify({ title: "Failed to create release", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Created release ${payload.release?.version ?? createVersion}`);
+    notify({
+      title: `Created release ${payload.release?.version ?? createVersion}`,
+      tone: "success",
+    });
     await loadData();
   }
 
   async function handleMarkStatus(status: string) {
     if (!selectedRelease) return;
-    setMessage(null);
 
     const response = await fetch(
       `/api/v1/releases/${encodeURIComponent(selectedRelease.id)}/status`,
@@ -290,12 +295,12 @@ export default function ReleasesPage() {
 
     const payload = (await response.json()) as { message?: string; release?: Release };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to update status");
+      notify({ title: "Failed to update status", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
     setStatusNote("");
-    setMessage(`Release marked as ${status}`);
+    notify({ title: `Release marked as ${status}`, tone: "success" });
     await loadData();
     if (payload.release) {
       setSelectedRelease(payload.release);
@@ -304,14 +309,13 @@ export default function ReleasesPage() {
 
   async function handleLoadDiff() {
     if (!selectedRelease || !diffFromVersion.trim()) return;
-    setMessage(null);
 
     const response = await fetch(
       `/api/v1/releases/diff?from=${encodeURIComponent(diffFromVersion.trim())}&to=${encodeURIComponent(selectedRelease.version)}`,
     );
     const payload = (await response.json()) as { message?: string; report?: ReleaseDiffReport };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to load release diff");
+      notify({ title: "Failed to load release diff", message: payload.message ?? undefined, tone: "error" });
       setDiffReport(null);
       return;
     }
@@ -322,7 +326,6 @@ export default function ReleasesPage() {
   async function handleExportBundle() {
     if (!selectedRelease) return;
     setExportingBundle(true);
-    setMessage(null);
 
     const response = await fetch(
       `/api/v1/releases/${encodeURIComponent(selectedRelease.id)}/bundle`,
@@ -337,19 +340,23 @@ export default function ReleasesPage() {
     setExportingBundle(false);
 
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to export bundle");
+      notify({ title: "Failed to export bundle", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(
-      `Bundle exported to ${payload.outputDir ?? ".fdt/exports/releases/" + selectedRelease.version}`,
-    );
+    notify({
+      title: "Bundle exported",
+      message: payload.outputDir ?? ".fdt/exports/releases/" + selectedRelease.version,
+      tone: "success",
+    });
   }
 
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading releases…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -398,8 +405,6 @@ export default function ReleasesPage() {
           </li>
         </ol>
       </NotePanel>
-
-      {message && <PageAlert>{message}</PageAlert>}
 
       <div className="page-grid-2">
         <Panel className="panel-compact">

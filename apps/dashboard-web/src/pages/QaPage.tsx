@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import {
   EmptyState,
   NotePanel,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface QaStep {
@@ -58,6 +59,7 @@ const EMPTY_SCENARIO_FORM = {
 };
 
 export default function QaPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [scenarios, setScenarios] = useState<QaScenario[]>([]);
   const [runs, setRuns] = useState<QaRun[]>([]);
@@ -66,12 +68,10 @@ export default function QaPage() {
   const [form, setForm] = useState(EMPTY_SCENARIO_FORM);
   const [importJson, setImportJson] = useState("");
   const [attachReleaseId, setAttachReleaseId] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -108,7 +108,11 @@ export default function QaPage() {
         setReleases(data.releases.map((release) => ({ id: release.id, version: release.version })));
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load QA data",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -120,7 +124,6 @@ export default function QaPage() {
 
   async function handleSaveScenario(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const scenarioId = form.id.trim();
     const payload: QaScenario = {
@@ -146,39 +149,36 @@ export default function QaPage() {
 
     const result = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setMessage(result.message ?? "Failed to save scenario");
+      notify({ title: "Failed to save scenario", message: result.message ?? undefined, tone: "error" });
       return;
     }
 
     setForm(EMPTY_SCENARIO_FORM);
-    setMessage(`Saved scenario ${scenarioId}`);
+    notify({ title: `Saved scenario ${scenarioId}`, tone: "success" });
     await loadData();
   }
 
   async function handleDeleteScenario(id: string) {
-    setMessage(null);
     const response = await fetch(`/api/v1/qa/scenarios/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
       const result = (await response.json()) as { message?: string };
-      setMessage(result.message ?? "Failed to delete scenario");
+      notify({ title: "Failed to delete scenario", message: result.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Removed scenario ${id}`);
+    notify({ title: `Removed scenario ${id}`, tone: "success" });
     await loadData();
   }
 
   async function handleImportRun() {
-    setMessage(null);
-
     let payload: unknown;
     try {
       payload = JSON.parse(importJson);
     } catch {
-      setMessage("Import JSON is invalid");
+      notify({ title: "Import JSON is invalid", tone: "error" });
       return;
     }
 
@@ -190,18 +190,17 @@ export default function QaPage() {
 
     const result = (await response.json()) as { message?: string; run?: QaRun };
     if (!response.ok) {
-      setMessage(result.message ?? "Failed to import QA run");
+      notify({ title: "Failed to import QA run", message: result.message ?? undefined, tone: "error" });
       return;
     }
 
     setImportJson("");
-    setMessage(`Imported run ${result.run?.id ?? ""}`);
+    notify({ title: `Imported run ${result.run?.id ?? ""}`.trim(), tone: "success" });
     await loadData();
   }
 
   async function handleAttachRun() {
     if (!selectedRun || !attachReleaseId) return;
-    setMessage(null);
 
     const release = releases.find((item) => item.id === attachReleaseId);
     const response = await fetch(
@@ -218,11 +217,11 @@ export default function QaPage() {
 
     const result = (await response.json()) as { message?: string; run?: QaRun };
     if (!response.ok) {
-      setMessage(result.message ?? "Failed to attach run to release");
+      notify({ title: "Failed to attach run to release", message: result.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Attached run to release ${release?.version ?? attachReleaseId}`);
+    notify({ title: `Attached run to release ${release?.version ?? attachReleaseId}`, tone: "success" });
     await loadData();
     if (result.run) {
       setSelectedRun(result.run);
@@ -245,7 +244,9 @@ export default function QaPage() {
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading QA data…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -286,8 +287,6 @@ export default function QaPage() {
           <li>Attach runs to a release candidate for sign-off</li>
         </ol>
       </NotePanel>
-
-      {message && <PageAlert>{message}</PageAlert>}
 
       <div className="page-grid-2">
         <Panel className="panel-compact">

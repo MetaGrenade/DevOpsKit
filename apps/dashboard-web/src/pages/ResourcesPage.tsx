@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PageAlert,
   PageIntro,
@@ -7,6 +7,10 @@ import {
   StatGrid,
   StatTile,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Finding {
@@ -15,6 +19,12 @@ interface Finding {
   code: string;
   message: string;
   resource?: string;
+}
+
+interface ResourceInventoryItem {
+  name: string;
+  path: string;
+  category?: string;
 }
 
 interface ResourceDoctorReport {
@@ -26,7 +36,7 @@ interface ResourceDoctorReport {
     warnings: number;
     passed: number;
   };
-  resources: Array<{ name: string; path: string; category?: string }>;
+  resources: ResourceInventoryItem[];
   findings: Finding[];
 }
 
@@ -41,13 +51,35 @@ function findingBadgeClass(severity: Finding["severity"]): string {
   }
 }
 
+const INVENTORY_COLUMNS: Array<DataTableColumn<ResourceInventoryItem>> = [
+  {
+    key: "name",
+    header: "Name",
+    className: "font-medium",
+    render: (resource) => resource.name,
+  },
+  {
+    key: "category",
+    header: "Category",
+    className: "text-[var(--color-muted)]",
+    render: (resource) => resource.category ?? "—",
+  },
+  {
+    key: "path",
+    header: "Path",
+    className: "text-[var(--color-muted)]",
+    render: (resource) => resource.path,
+  },
+];
+
 export default function ResourcesPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [report, setReport] = useState<ResourceDoctorReport | null>(null);
   const [reportStatus, setReportStatus] = useState<"loading" | "ready" | "missing" | "error">(
     "loading",
   );
-  const [message, setMessage] = useState<string | null>(null);
+  const [inventoryFilter, setInventoryFilter] = useState("");
 
   async function loadActiveWorkspace() {
     const response = await fetch("/api/v1/workspaces/active");
@@ -82,7 +114,6 @@ export default function ResourcesPage() {
   }, []);
 
   async function refreshReportFromDisk() {
-    setMessage(null);
     setReportStatus("loading");
     const response = await fetch("/api/v1/reports/resource-doctor/load", {
       method: "POST",
@@ -98,19 +129,21 @@ export default function ResourcesPage() {
       throw new Error("Failed to refresh report");
     }
     await loadReportFromApi();
+    notify({ title: "Report refreshed", message: "Loaded the latest report from disk.", tone: "success" });
   }
 
   async function validateActiveWorkspace() {
-    setMessage(null);
     const response = await fetch("/api/v1/workspaces/active/validate", { method: "POST" });
     const payload = await response.json();
     if (!response.ok) {
-      setMessage(payload.message ?? "Validation failed");
+      notify({ title: "Validation failed", message: payload.message ?? undefined, tone: "error" });
       return;
     }
-    setMessage(
-      `Validated ${payload.summary.resourcesScanned} resources (${payload.summary.errors} errors)`,
-    );
+    notify({
+      title: "Validation complete",
+      message: `Scanned ${payload.summary.resourcesScanned} resources · ${payload.summary.errors} errors`,
+      tone: payload.summary.errors > 0 ? "warning" : "success",
+    });
     await loadReportFromApi();
   }
 
@@ -130,7 +163,21 @@ export default function ResourcesPage() {
 
     setReport(payload);
     setReportStatus("ready");
+    notify({ title: "Report imported", message: `${payload.resources.length} resources loaded.`, tone: "success" });
   }
+
+  const filteredResources = useMemo(() => {
+    if (!report) {
+      return [];
+    }
+    const normalized = inventoryFilter.trim().toLowerCase();
+    if (!normalized) {
+      return report.resources;
+    }
+    return report.resources.filter((resource) =>
+      [resource.name, resource.category ?? "", resource.path].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [report, inventoryFilter]);
 
   return (
     <PageStack>
@@ -152,7 +199,7 @@ export default function ResourcesPage() {
           <div className="btn-row" style={{ marginTop: 0 }}>
             <button
               type="button"
-              onClick={() => validateActiveWorkspace().catch(() => setMessage("Validation failed"))}
+              onClick={() => validateActiveWorkspace().catch(() => notify({ title: "Validation failed", tone: "error" }))}
               className="btn btn-accent btn-sm"
             >
               Run validation
@@ -173,7 +220,9 @@ export default function ResourcesPage() {
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   if (file) {
-                    importReportFromFile(file).catch(() => setReportStatus("error"));
+                    importReportFromFile(file).catch(() =>
+                      notify({ title: "Import failed", message: "Could not parse the selected file.", tone: "error" }),
+                    );
                   }
                 }}
               />
@@ -182,12 +231,16 @@ export default function ResourcesPage() {
         }
       />
 
-      {message && <PageAlert>{message}</PageAlert>}
-
       {!activeWorkspace && (
         <PageAlert variant="warning">
           No active workspace selected. Create or select one on the Workspaces page.
         </PageAlert>
+      )}
+
+      {reportStatus === "loading" && (
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       )}
 
       {reportStatus === "missing" && activeWorkspace && (
@@ -237,25 +290,22 @@ export default function ResourcesPage() {
 
           <Panel className="panel-compact">
             <h3 className="panel-heading">Resource Inventory</h3>
-            <div className="data-table-wrap">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Path</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.resources.map((resource) => (
-                    <tr key={resource.path}>
-                      <td className="font-medium">{resource.name}</td>
-                      <td className="text-[var(--color-muted)]">{resource.category ?? "—"}</td>
-                      <td className="text-[var(--color-muted)]">{resource.path}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="panel-section">
+              <Toolbar
+                search={{
+                  value: inventoryFilter,
+                  onChange: setInventoryFilter,
+                  placeholder: "Filter resources…",
+                  ariaLabel: "Filter resource inventory",
+                }}
+                count={`${filteredResources.length} of ${report.resources.length}`}
+              />
+              <DataTable
+                columns={INVENTORY_COLUMNS}
+                rows={filteredResources}
+                getRowKey={(resource) => resource.path}
+                emptyMessage="No resources match your filter."
+              />
             </div>
           </Panel>
         </>
