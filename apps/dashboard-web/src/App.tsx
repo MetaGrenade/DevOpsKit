@@ -27,6 +27,7 @@ const CommercePage = lazy(() => import("./pages/CommercePage"));
 const WorldPage = lazy(() => import("./pages/WorldPage"));
 const EnvironmentPage = lazy(() => import("./pages/EnvironmentPage"));
 const StateBagPage = lazy(() => import("./pages/StateBagPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 
 interface OverviewModule {
   id: string;
@@ -185,6 +186,7 @@ export default function App() {
         {page === "maps" && <MapsPage key={workspaceScopeKey} />}
         {page === "graph" && <GraphPage key={workspaceScopeKey} />}
         {page === "nui" && <NuiPage key={workspaceScopeKey} />}
+        {page === "docs" && <DocsPage onNavigate={handleNavigate} />}
       </Suspense>
     </AppShell>
   );

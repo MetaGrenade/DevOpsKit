@@ -1,10 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { PageId } from "../../navigation";
 import { findNavItem } from "../../navigation";
 import type { WorkspaceWithConfig } from "../../types/api";
-import { MenuIcon } from "../icons";
+import { MenuIcon, SearchIcon } from "../icons";
 import ThemeToggle from "../ui/ThemeToggle";
+import { Kbd } from "../ui/primitives";
+import CommandPalette from "../CommandPalette";
 import Sidebar from "./Sidebar";
+
+const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
 interface AppShellProps {
   page: PageId;
@@ -54,6 +58,7 @@ export default function AppShell({
 }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useStateFromStorage("fdt.sidebar.collapsed", false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const current = findNavItem(page);
 
   useEffect(() => {
@@ -66,6 +71,25 @@ export default function AppShell({
       document.body.style.overflow = previous;
     };
   }, [mobileNavOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handlePaletteNavigate = useCallback(
+    (nextPage: PageId) => {
+      onNavigate(nextPage);
+      setPaletteOpen(false);
+    },
+    [onNavigate],
+  );
 
   return (
     <div className="app-shell">
@@ -107,12 +131,28 @@ export default function AppShell({
             </div>
           </div>
           <div className="topbar-right">
+            <button
+              type="button"
+              className="cmd-trigger"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Open command palette"
+            >
+              <SearchIcon size="sm" />
+              <span className="cmd-trigger-label">Search</span>
+              <Kbd>{isMac ? "⌘" : "Ctrl"} K</Kbd>
+            </button>
             <ThemeToggle />
           </div>
         </header>
 
         <main className="app-content">{children}</main>
       </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onNavigate={handlePaletteNavigate}
+      />
     </div>
   );
 }

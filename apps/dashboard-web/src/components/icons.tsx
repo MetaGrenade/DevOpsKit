@@ -168,6 +168,12 @@ const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
       <path d="M8 9h8M8 13h5" />
     </Svg>
   ),
+  docs: (p) => (
+    <Svg {...p}>
+      <path d="M6 3h8l4 4v14H6z" />
+      <path d="M14 3v4h4M9 12h6M9 16h6" />
+    </Svg>
+  ),
 };
 
 export function NavIconGlyph({ icon, className = "", size = "sm" }: { icon: NavIcon; className?: string; size?: IconProps["size"] }) {

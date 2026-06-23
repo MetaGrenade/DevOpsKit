@@ -22,6 +22,7 @@ const PAGE_LOADERS: Partial<Record<PageId, () => Promise<unknown>>> = {
   world: () => import("./pages/WorldPage"),
   environment: () => import("./pages/EnvironmentPage"),
   statebag: () => import("./pages/StateBagPage"),
+  docs: () => import("./pages/DocsPage"),
 };
 
 export function prefetchPage(page: PageId): void {

@@ -20,7 +20,8 @@ export type PageId =
   | "vehicles"
   | "maps"
   | "graph"
-  | "nui";
+  | "nui"
+  | "docs";
 
 export type NavIcon =
   | "overview"
@@ -44,7 +45,8 @@ export type NavIcon =
   | "vehicle"
   | "map"
   | "graph"
-  | "nui";
+  | "nui"
+  | "docs";
 
 export interface NavItem {
   id: PageId;
@@ -81,6 +83,13 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Register server folders and switch context",
         icon: "workspace",
         keywords: ["server", "folder", "fdt.workspace.json"],
+      },
+      {
+        id: "docs",
+        label: "Docs & Help",
+        description: "Guides, module reference, and shortcuts",
+        icon: "docs",
+        keywords: ["help", "documentation", "guide", "shortcuts", "cli", "manual"],
       },
     ],
   },

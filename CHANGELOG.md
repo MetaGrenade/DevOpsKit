@@ -12,9 +12,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Shared dashboard UI primitives — `PageStack`, `PageIntro`, `PageAlert`, `Panel`, `StatGrid`, `NotePanel`, and semantic form/table/button classes in `index.css`.
 - **Overview** getting-started guide — four-step onboarding, five developer workflow personas (DevOps, content, world/map, QA/release, framework), CLI examples, and a feature catalog grouped like the sidebar.
 - Sidebar navigation grouped by intended workflow — **Start → Validate → World → Content → Ship → Deploy**.
+- **Command palette** (`⌘K` / `Ctrl+K`) — fuzzy search across every module plus quick theme switching, with full keyboard navigation; top-bar search trigger added.
+- **Toast notification system** — global `ToastProvider` / `useToast()` with success/error/warning/info tones and auto-dismiss.
+- In-app **Docs & Help** page — getting started, daily workflow, data-driven module reference, keyboard shortcuts, and a CLI cheatsheet, linked from the Start group.
+- Shared **ThemeProvider** context so the top-bar toggle and command palette stay in sync.
+- New UI primitives — `Kbd`, `Tooltip`, `Skeleton` / `SkeletonText`, and `SegmentedControl`.
+- Design system v2 tokens — elevation ramp (`--surface-1..3`), accent ramp, motion/easing tokens, focus-visible ring system, and a max-width content container.
 
 ### Changed
 
+- Page loader now renders skeleton placeholders instead of a spinner for better perceived performance.
 - Dashboard typography — **Plus Jakarta Sans** (UI), **Outfit** (headings), and **JetBrains Mono** (code); unified type scale, label tracking, and heading letter-spacing.
 - Dashboard contrast — stronger ink/muted/label tokens, panel shadows, and borders in both light and dark themes; light canvas shifted to `#e2e8f0` for clearer surface separation.
 - Dashboard app shell top bar — page title and theme toggle only; workspace name and API status remain in the sidebar.
