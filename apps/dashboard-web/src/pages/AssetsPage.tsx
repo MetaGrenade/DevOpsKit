@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
   PageAlert,
@@ -8,6 +8,10 @@ import {
   StatGrid,
   StatTile,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ResourceSummary {
@@ -73,15 +77,27 @@ function findingBadgeClass(severity: Finding["severity"]): string {
   }
 }
 
+const RANKING_COLUMNS: Array<DataTableColumn<ResourceSummary>> = [
+  {
+    key: "resource",
+    header: "Resource",
+    className: "text-[var(--color-accent-ink)]",
+    render: (summary) => summary.resource,
+  },
+  { key: "assetCount", header: "Assets", align: "right", render: (summary) => summary.assetCount },
+  { key: "totalMb", header: "Total MB", align: "right", render: (summary) => bytesToMb(summary.totalBytes) },
+  { key: "ytdMb", header: "YTD MB", align: "right", render: (summary) => bytesToMb(summary.ytdBytes) },
+];
+
 export default function AssetsPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [report, setReport] = useState<AssetAuditorReport | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const [rankingFilter, setRankingFilter] = useState("");
 
   async function loadReport() {
     setStatus("loading");
-    setMessage(null);
 
     const wsRes = await fetch("/api/v1/workspaces/active");
     if (wsRes.status === 404) {
@@ -109,23 +125,38 @@ export default function AssetsPage() {
   }, []);
 
   async function runAudit() {
-    setMessage(null);
     const response = await fetch("/api/v1/workspaces/active/audit-stream", { method: "POST" });
     const payload = await response.json();
     if (!response.ok) {
-      setMessage(payload.message ?? "Audit failed");
+      notify({ title: "Audit failed", message: payload.message ?? undefined, tone: "error" });
       return;
     }
-    setMessage(
-      `Audited ${payload.summary.assetsIndexed} assets (${payload.summary.duplicateFileNames} duplicate filenames, ${payload.summary.warnings} warnings)`,
-    );
+    notify({
+      title: "Stream audit complete",
+      message: `${payload.summary.assetsIndexed} assets · ${payload.summary.duplicateFileNames} duplicate filenames · ${payload.summary.warnings} warnings`,
+      tone: payload.summary.warnings > 0 ? "warning" : "success",
+    });
     await loadReport();
   }
+
+  const filteredSummaries = useMemo(() => {
+    if (!report) {
+      return [];
+    }
+    const normalized = rankingFilter.trim().toLowerCase();
+    const sorted = [...report.resourceSummaries].sort((a, b) => b.totalBytes - a.totalBytes);
+    if (!normalized) {
+      return sorted;
+    }
+    return sorted.filter((summary) => summary.resource.toLowerCase().includes(normalized));
+  }, [report, rankingFilter]);
 
   if (status === "loading") {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading asset report…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -155,8 +186,6 @@ export default function AssetsPage() {
         }
       />
 
-      {message && <PageAlert>{message}</PageAlert>}
-
       {status === "missing" && (
         <PageAlert variant="warning">
           No asset report yet. Run a stream audit or use{" "}
@@ -183,27 +212,22 @@ export default function AssetsPage() {
           {report.resourceSummaries.length > 0 && (
             <Panel className="panel-compact">
               <h3 className="panel-heading">Resource size ranking</h3>
-              <div className="data-table-wrap">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Resource</th>
-                      <th>Assets</th>
-                      <th>Total MB</th>
-                      <th>YTD MB</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.resourceSummaries.map((summary) => (
-                      <tr key={summary.resource}>
-                        <td className="text-[var(--color-accent-ink)]">{summary.resource}</td>
-                        <td>{summary.assetCount}</td>
-                        <td>{bytesToMb(summary.totalBytes)}</td>
-                        <td>{bytesToMb(summary.ytdBytes)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="panel-section">
+                <Toolbar
+                  search={{
+                    value: rankingFilter,
+                    onChange: setRankingFilter,
+                    placeholder: "Filter resources…",
+                    ariaLabel: "Filter resource size ranking",
+                  }}
+                  count={`${filteredSummaries.length} of ${report.resourceSummaries.length}`}
+                />
+                <DataTable
+                  columns={RANKING_COLUMNS}
+                  rows={filteredSummaries}
+                  getRowKey={(summary) => summary.resource}
+                  emptyMessage="No resources match your filter."
+                />
               </div>
             </Panel>
           )}

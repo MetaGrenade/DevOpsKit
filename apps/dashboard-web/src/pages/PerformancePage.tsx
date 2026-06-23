@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
   StatGrid,
   StatTile,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface PerformanceResourceMetric {
@@ -67,12 +70,13 @@ function directionBadgeClass(direction: string): string {
 }
 
 export default function PerformancePage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [snapshots, setSnapshots] = useState<PerformanceSnapshot[]>([]);
   const [report, setReport] = useState<PerformanceComparisonReport | null>(null);
   const [reportPath, setReportPath] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
-  const [message, setMessage] = useState<string | null>(null);
+  const [changeFilter, setChangeFilter] = useState("");
   const [importJson, setImportJson] = useState("");
   const [baselineId, setBaselineId] = useState("");
   const [targetId, setTargetId] = useState("");
@@ -81,7 +85,6 @@ export default function PerformancePage() {
 
   async function loadData() {
     setStatus("loading");
-    setMessage(null);
 
     const wsRes = await fetch("/api/v1/workspaces/active");
     if (wsRes.status === 404) {
@@ -93,7 +96,7 @@ export default function PerformancePage() {
     }
     if (!wsRes.ok) {
       setStatus("error");
-      setMessage("Failed to load active workspace");
+      notify({ title: "Failed to load active workspace", tone: "error" });
       return;
     }
     setActiveWorkspace((await wsRes.json()) as WorkspaceWithConfig);
@@ -119,7 +122,7 @@ export default function PerformancePage() {
     }
     if (!reportRes.ok) {
       setStatus("error");
-      setMessage("Failed to load performance comparison report");
+      notify({ title: "Failed to load performance comparison report", tone: "error" });
       return;
     }
 
@@ -139,7 +142,6 @@ export default function PerformancePage() {
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
-    setMessage(null);
 
     try {
       const payload = JSON.parse(importJson) as unknown;
@@ -150,16 +152,20 @@ export default function PerformancePage() {
       });
       const body = (await response.json()) as { message?: string; snapshot?: PerformanceSnapshot };
       if (!response.ok) {
-        setMessage(body.message ?? "Import failed");
+        notify({ title: "Import failed", message: body.message ?? undefined, tone: "error" });
         setBusy(false);
         return;
       }
 
-      setMessage(`Imported snapshot ${body.snapshot?.id ?? ""}`);
+      notify({ title: `Imported snapshot ${body.snapshot?.id ?? ""}`.trim(), tone: "success" });
       setImportJson("");
       await loadData();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Import failed",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setBusy(false);
     }
@@ -168,7 +174,6 @@ export default function PerformancePage() {
   async function handleCompare(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
-    setMessage(null);
 
     const response = await fetch("/api/v1/performance/compare", {
       method: "POST",
@@ -182,22 +187,62 @@ export default function PerformancePage() {
 
     const body = (await response.json()) as { message?: string; report?: PerformanceComparisonReport };
     if (!response.ok) {
-      setMessage(body.message ?? "Comparison failed");
+      notify({ title: "Comparison failed", message: body.message ?? undefined, tone: "error" });
       setBusy(false);
       return;
     }
 
-    setMessage(
-      `Comparison complete — ${body.report?.summary.regressions ?? 0} regressions, ${body.report?.summary.improvements ?? 0} improvements`,
-    );
+    notify({
+      title: "Comparison complete",
+      message: `${body.report?.summary.regressions ?? 0} regressions · ${body.report?.summary.improvements ?? 0} improvements`,
+      tone: (body.report?.summary.regressions ?? 0) > 0 ? "warning" : "success",
+    });
     await loadData();
     setBusy(false);
   }
 
+  const changeColumns: Array<DataTableColumn<PerformanceComparisonChange>> = useMemo(
+    () => [
+      {
+        key: "resource",
+        header: "Resource",
+        className: "text-[var(--color-accent-ink)]",
+        render: (change) => change.resource,
+      },
+      { key: "metric", header: "Metric", render: (change) => change.metric },
+      { key: "baselineValue", header: "Baseline", align: "right", render: (change) => change.baselineValue },
+      { key: "targetValue", header: "Target", align: "right", render: (change) => change.targetValue },
+      { key: "changePercent", header: "Change", align: "right", render: (change) => `${change.changePercent}%` },
+      {
+        key: "direction",
+        header: "Direction",
+        render: (change) => (
+          <span className={`text-xs ${directionBadgeClass(change.direction)}`}>{change.direction}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const filteredChanges = useMemo(() => {
+    if (!report) {
+      return [];
+    }
+    const normalized = changeFilter.trim().toLowerCase();
+    if (!normalized) {
+      return report.changes;
+    }
+    return report.changes.filter((change) =>
+      [change.resource, change.metric, change.direction].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [report, changeFilter]);
+
   if (status === "loading") {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading performance snapshots…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -233,7 +278,6 @@ export default function PerformancePage() {
           <code className="inline-code">fdt perf compare --from baseline --to target</code> ·{" "}
           <code className="inline-code">fdt perf report</code>
         </p>
-        {message && <PageAlert>{message}</PageAlert>}
       </Panel>
 
       <div className="page-grid-2">
@@ -350,35 +394,22 @@ export default function PerformancePage() {
       {report && report.changes.length > 0 && (
         <Panel className="panel-compact">
           <h3 className="panel-heading">Metric changes</h3>
-          <div className="data-table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Resource</th>
-                  <th>Metric</th>
-                  <th>Baseline</th>
-                  <th>Target</th>
-                  <th>Change</th>
-                  <th>Direction</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.changes.map((change) => (
-                  <tr key={`${change.resource}-${change.metric}`}>
-                    <td className="text-[var(--color-accent-ink)]">{change.resource}</td>
-                    <td>{change.metric}</td>
-                    <td>{change.baselineValue}</td>
-                    <td>{change.targetValue}</td>
-                    <td>{change.changePercent}%</td>
-                    <td>
-                      <span className={`text-xs ${directionBadgeClass(change.direction)}`}>
-                        {change.direction}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="panel-section">
+            <Toolbar
+              search={{
+                value: changeFilter,
+                onChange: setChangeFilter,
+                placeholder: "Filter by resource, metric, direction…",
+                ariaLabel: "Filter metric changes",
+              }}
+              count={`${filteredChanges.length} of ${report.changes.length}`}
+            />
+            <DataTable
+              columns={changeColumns}
+              rows={filteredChanges}
+              getRowKey={(change) => `${change.resource}-${change.metric}`}
+              emptyMessage="No changes match your filter."
+            />
           </div>
         </Panel>
       )}

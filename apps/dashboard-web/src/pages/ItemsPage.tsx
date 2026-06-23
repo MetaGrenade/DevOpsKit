@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Item {
@@ -53,6 +56,7 @@ const EMPTY_FORM = {
 };
 
 export default function ItemsPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [adapters, setAdapters] = useState<AdapterInfo[]>([]);
@@ -60,12 +64,11 @@ export default function ItemsPage() {
   const [frameworkProfile, setFrameworkProfile] = useState<FrameworkProfileSummary | null>(null);
   const [exportPreview, setExportPreview] = useState<ExportFile[] | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [message, setMessage] = useState<string | null>(null);
+  const [itemFilter, setItemFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -100,7 +103,11 @@ export default function ItemsPage() {
         }
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load items",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -112,7 +119,6 @@ export default function ItemsPage() {
 
   async function handleSaveItem(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const payload = {
       id: form.id.trim(),
@@ -135,36 +141,39 @@ export default function ItemsPage() {
 
     if (!response.ok) {
       const body = (await response.json()) as { message?: string };
-      setMessage(body.message ?? "Failed to save item");
+      notify({ title: "Failed to save item", message: body.message ?? undefined, tone: "error" });
       return;
     }
 
     setForm(EMPTY_FORM);
     await loadData();
-    setMessage(`Saved item "${payload.id}"`);
+    notify({ title: `Saved item "${payload.id}"`, tone: "success" });
   }
 
   async function handleDeleteItem(itemId: string) {
     const response = await fetch(`/api/v1/content/items/${itemId}`, { method: "DELETE" });
     if (!response.ok) {
-      setMessage(`Failed to delete ${itemId}`);
+      notify({ title: `Failed to delete ${itemId}`, tone: "error" });
       return;
     }
+    notify({ title: `Removed item ${itemId}`, tone: "success" });
     await loadData();
   }
 
   async function handleValidate() {
     const response = await fetch("/api/v1/content/validate", { method: "POST" });
     if (!response.ok) {
-      setMessage("Validation failed");
+      notify({ title: "Validation failed", tone: "error" });
       return;
     }
     const data = (await response.json()) as {
       report: { summary: { errors: number; warnings: number; itemsChecked: number } };
     };
-    setMessage(
-      `Validated ${data.report.summary.itemsChecked} items — ${data.report.summary.errors} errors, ${data.report.summary.warnings} warnings`,
-    );
+    notify({
+      title: "Validation complete",
+      message: `${data.report.summary.itemsChecked} items · ${data.report.summary.errors} errors · ${data.report.summary.warnings} warnings`,
+      tone: data.report.summary.errors > 0 ? "warning" : "success",
+    });
   }
 
   async function handleExportPreview() {
@@ -175,7 +184,7 @@ export default function ItemsPage() {
     });
 
     if (!response.ok) {
-      setMessage("Export preview failed");
+      notify({ title: "Export preview failed", tone: "error" });
       return;
     }
 
@@ -183,10 +192,54 @@ export default function ItemsPage() {
     setExportPreview(data.files);
   }
 
+  const itemColumns: Array<DataTableColumn<Item>> = useMemo(
+    () => [
+      {
+        key: "label",
+        header: "Item",
+        render: (item) => (
+          <div>
+            <p className="font-medium text-[var(--color-accent-ink)]">{item.label}</p>
+            <p className="text-xs text-[var(--color-muted)]">{item.id}</p>
+          </div>
+        ),
+      },
+      { key: "category", header: "Category", render: (item) => item.category },
+      { key: "weight", header: "Weight", align: "right", render: (item) => `${item.weight}kg` },
+      {
+        key: "actions",
+        header: "",
+        align: "right",
+        render: (item) => (
+          <button
+            type="button"
+            onClick={() => void handleDeleteItem(item.id)}
+            className="btn btn-secondary btn-sm"
+          >
+            Delete
+          </button>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const filteredItems = useMemo(() => {
+    const normalized = itemFilter.trim().toLowerCase();
+    if (!normalized) {
+      return items;
+    }
+    return items.filter((item) =>
+      [item.label, item.id, item.category].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [items, itemFilter]);
+
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading items…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -221,8 +274,6 @@ export default function ItemsPage() {
           </button>
         }
       />
-
-      {message && <PageAlert>{message}</PageAlert>}
 
       <Panel className="panel-compact">
         <form onSubmit={(e) => void handleSaveItem(e)} className="form-grid form-grid-2 form-stack">
@@ -299,29 +350,27 @@ export default function ItemsPage() {
       </Panel>
 
       <Panel className="panel-compact">
-        <h3 className="panel-heading">Registry ({items.length})</h3>
+        <h3 className="panel-heading">Registry</h3>
         {items.length === 0 ? (
           <p className="panel-subtext">No items yet. Add one above or import via CLI.</p>
         ) : (
-          <ul className="list-plain panel-section divide-y divide-[var(--color-line)]">
-            {items.map((item) => (
-              <li key={item.id} className="flex items-center justify-between gap-4 py-3 text-sm">
-                <div>
-                  <p className="font-medium text-[var(--color-accent-ink)]">{item.label}</p>
-                  <p className="text-xs text-[var(--color-muted)]">
-                    {item.id} · {item.category} · {item.weight}kg
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void handleDeleteItem(item.id)}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="panel-section">
+            <Toolbar
+              search={{
+                value: itemFilter,
+                onChange: setItemFilter,
+                placeholder: "Filter items…",
+                ariaLabel: "Filter item registry",
+              }}
+              count={`${filteredItems.length} of ${items.length}`}
+            />
+            <DataTable
+              columns={itemColumns}
+              rows={filteredItems}
+              getRowKey={(item) => item.id}
+              emptyMessage="No items match your filter."
+            />
+          </div>
         )}
       </Panel>
 

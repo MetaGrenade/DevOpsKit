@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import {
   EmptyState,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface Vehicle {
@@ -82,6 +83,7 @@ const EMPTY_MAP = {
 type Tab = "vehicles" | "businesses" | "jobs" | "gangs" | "maps";
 
 export default function DomainsPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [tab, setTab] = useState<Tab>("vehicles");
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -94,12 +96,10 @@ export default function DomainsPage() {
   const [mapForm, setMapForm] = useState(EMPTY_MAP);
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [exportPreview, setExportPreview] = useState<ExportFile[] | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -140,7 +140,11 @@ export default function DomainsPage() {
         if (data.zones[0]) setSelectedZoneId(data.zones[0].id);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load domain builders",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -167,12 +171,12 @@ export default function DomainsPage() {
 
     if (!response.ok) {
       const payload = (await response.json()) as { message?: string };
-      setMessage(payload.message ?? "Failed to save vehicle");
+      notify({ title: "Failed to save vehicle", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
     setVehicleForm(EMPTY_VEHICLE);
-    setMessage(`Saved vehicle ${vehicleForm.spawnName}`);
+    notify({ title: `Saved vehicle ${vehicleForm.spawnName}`, tone: "success" });
     await loadData();
   }
 
@@ -186,11 +190,11 @@ export default function DomainsPage() {
 
     const payload = (await response.json()) as { message?: string; business?: Business };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to create business from zone");
+      notify({ title: "Failed to create business from zone", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Created business ${payload.business?.id ?? ""} from zone ${selectedZoneId}`);
+    notify({ title: `Created business ${payload.business?.id ?? ""}`.trim(), message: `From zone ${selectedZoneId}`, tone: "success" });
     await loadData();
   }
 
@@ -204,11 +208,11 @@ export default function DomainsPage() {
 
     const payload = (await response.json()) as { message?: string; job?: Job };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to create job from zone");
+      notify({ title: "Failed to create job from zone", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Created job ${payload.job?.id ?? ""} from zone ${selectedZoneId}`);
+    notify({ title: `Created job ${payload.job?.id ?? ""}`.trim(), message: `From zone ${selectedZoneId}`, tone: "success" });
     await loadData();
   }
 
@@ -222,11 +226,11 @@ export default function DomainsPage() {
 
     const payload = (await response.json()) as { message?: string; gang?: Gang };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to create gang from zone");
+      notify({ title: "Failed to create gang from zone", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Created gang ${payload.gang?.id ?? ""} from zone ${selectedZoneId}`);
+    notify({ title: `Created gang ${payload.gang?.id ?? ""}`.trim(), message: `From zone ${selectedZoneId}`, tone: "success" });
     await loadData();
   }
 
@@ -240,12 +244,12 @@ export default function DomainsPage() {
 
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to create map package");
+      notify({ title: "Failed to create map package", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
     setMapForm(EMPTY_MAP);
-    setMessage(`Created map package ${mapForm.id}`);
+    notify({ title: `Created map package ${mapForm.id}`, tone: "success" });
     await loadData();
   }
 
@@ -256,11 +260,11 @@ export default function DomainsPage() {
 
     if (!response.ok) {
       const payload = (await response.json()) as { message?: string };
-      setMessage(payload.message ?? "Failed to refresh checklist");
+      notify({ title: "Failed to refresh checklist", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
-    setMessage(`Refreshed checklist for ${mapId}`);
+    notify({ title: `Refreshed checklist for ${mapId}`, tone: "success" });
     await loadData();
   }
 
@@ -272,7 +276,7 @@ export default function DomainsPage() {
     });
 
     if (!response.ok) {
-      setMessage("Export preview failed");
+      notify({ title: "Export preview failed", tone: "error" });
       return;
     }
 
@@ -283,7 +287,9 @@ export default function DomainsPage() {
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading domain builders…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -328,7 +334,6 @@ export default function DomainsPage() {
             Preview export
           </button>
         </div>
-        {message && <PageAlert>{message}</PageAlert>}
       </Panel>
 
       {tab === "vehicles" && (

@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
   NotePanel,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ZoneCoord {
@@ -45,16 +48,16 @@ const EMPTY_FORM = {
 };
 
 export default function ZonesPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [importJson, setImportJson] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [zoneFilter, setZoneFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -72,7 +75,11 @@ export default function ZonesPage() {
         setZones(data.zones);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load zones",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -84,7 +91,6 @@ export default function ZonesPage() {
 
   async function handleSaveZone(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const payload: Zone = {
       id: form.id.trim(),
@@ -110,33 +116,31 @@ export default function ZonesPage() {
 
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
-      setMessage(error.message ?? "Failed to save zone");
+      notify({ title: "Failed to save zone", message: error.message ?? undefined, tone: "error" });
       return;
     }
 
     setForm(EMPTY_FORM);
-    setMessage("Zone saved.");
+    notify({ title: "Zone saved", tone: "success" });
     await loadData();
   }
 
   async function handleDeleteZone(zoneId: string) {
-    setMessage(null);
     const response = await fetch(`/api/v1/zones/${encodeURIComponent(zoneId)}`, {
       method: "DELETE",
     });
 
     if (!response.ok) {
-      setMessage(`Failed to delete zone: ${zoneId}`);
+      notify({ title: `Failed to delete zone ${zoneId}`, tone: "error" });
       return;
     }
 
-    setMessage(`Removed zone: ${zoneId}`);
+    notify({ title: `Removed zone ${zoneId}`, tone: "success" });
     await loadData();
   }
 
   async function handleImport(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     try {
       const payload = JSON.parse(importJson) as unknown;
@@ -148,23 +152,73 @@ export default function ZonesPage() {
 
       if (!response.ok) {
         const error = (await response.json()) as { message?: string };
-        setMessage(error.message ?? "Import failed");
+        notify({ title: "Import failed", message: error.message ?? undefined, tone: "error" });
         return;
       }
 
       const result = (await response.json()) as { imported: number };
       setImportJson("");
-      setMessage(`Imported ${result.imported} zone(s) from devtools export.`);
+      notify({ title: `Imported ${result.imported} zone(s)`, message: "From devtools export.", tone: "success" });
       await loadData();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Invalid JSON");
+      notify({ title: "Import failed", message: error instanceof Error ? error.message : "Invalid JSON", tone: "error" });
     }
   }
+
+  const zoneColumns: Array<DataTableColumn<Zone>> = useMemo(
+    () => [
+      {
+        key: "id",
+        header: "ID",
+        className: "font-mono text-xs text-[var(--color-accent-ink)]",
+        render: (zone) => zone.id,
+      },
+      { key: "label", header: "Label", render: (zone) => zone.label },
+      { key: "type", header: "Type", render: (zone) => zone.type },
+      { key: "purpose", header: "Purpose", render: (zone) => zone.purpose },
+      {
+        key: "coords",
+        header: "Coords",
+        className: "font-mono text-xs text-[var(--color-muted)]",
+        render: (zone) =>
+          zone.coords
+            .map((coord) => `${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}, ${coord.z.toFixed(2)}`)
+            .join(" · "),
+      },
+      {
+        key: "actions",
+        header: "",
+        align: "right",
+        render: (zone) => (
+          <button
+            type="button"
+            onClick={() => void handleDeleteZone(zone.id)}
+            className="btn btn-secondary btn-sm"
+          >
+            Delete
+          </button>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const filteredZones = useMemo(() => {
+    const normalized = zoneFilter.trim().toLowerCase();
+    if (!normalized) {
+      return zones;
+    }
+    return zones.filter((zone) =>
+      [zone.id, zone.label, zone.type, zone.purpose].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [zones, zoneFilter]);
 
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading zones…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -208,8 +262,6 @@ export default function ZonesPage() {
           </li>
         </ol>
       </NotePanel>
-
-      {message && <PageAlert>{message}</PageAlert>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Panel className="panel-compact">
@@ -349,47 +401,26 @@ export default function ZonesPage() {
       </div>
 
       <Panel className="panel-compact">
-        <h3 className="panel-heading">Registered Zones ({zones.length})</h3>
+        <h3 className="panel-heading">Registered Zones</h3>
         {zones.length === 0 ? (
           <p className="panel-subtext panel-section">No zones yet.</p>
         ) : (
-          <div className="panel-section data-table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Label</th>
-                  <th>Type</th>
-                  <th>Purpose</th>
-                  <th>Coords</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {zones.map((zone) => (
-                  <tr key={zone.id}>
-                    <td className="font-mono text-xs text-[var(--color-accent-ink)]">{zone.id}</td>
-                    <td>{zone.label}</td>
-                    <td>{zone.type}</td>
-                    <td>{zone.purpose}</td>
-                    <td className="font-mono text-xs text-[var(--color-muted)]">
-                      {zone.coords
-                        .map((coord) => `${coord.x.toFixed(2)}, ${coord.y.toFixed(2)}, ${coord.z.toFixed(2)}`)
-                        .join(" · ")}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => void handleDeleteZone(zone.id)}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="panel-section">
+            <Toolbar
+              search={{
+                value: zoneFilter,
+                onChange: setZoneFilter,
+                placeholder: "Filter zones…",
+                ariaLabel: "Filter registered zones",
+              }}
+              count={`${filteredZones.length} of ${zones.length}`}
+            />
+            <DataTable
+              columns={zoneColumns}
+              rows={filteredZones}
+              getRowKey={(zone) => zone.id}
+              emptyMessage="No zones match your filter."
+            />
           </div>
         )}
       </Panel>
