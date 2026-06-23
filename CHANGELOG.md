@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Dashboard **light / dark / system** theme — `ThemeToggle`, CSS variable tokens, and inline bootstrap in `index.html` to apply theme before first paint.
+- Shared dashboard UI primitives — `PageStack`, `PageIntro`, `PageAlert`, `Panel`, `StatGrid`, `NotePanel`, and semantic form/table/button classes in `index.css`.
+- **Overview** getting-started guide — four-step onboarding, five developer workflow personas (DevOps, content, world/map, QA/release, framework), CLI examples, and a feature catalog grouped like the sidebar.
+- Sidebar navigation grouped by intended workflow — **Start → Validate → World → Content → Ship → Deploy**.
+
+### Changed
+
+- Dashboard app shell top bar — page title and theme toggle only; workspace name and API status remain in the sidebar.
+- All dashboard pages migrated from legacy hardcoded Tailwind (`bg-[#…]`, `border-white/10`, `text-slate-*`) to the semantic theme system.
+- **Overview** redesigned from a module status grid to a feature list and workflow breakdown.
+- Sidebar item order, group labels, and descriptions updated to match regular FDT usage.
+
+### Fixed
+
+- **Releases** page — missing closing wrapper after validation stats (build-breaking JSX).
+- **Vehicles** page — unused imports after theme migration.
+
 ## [0.0.1-alpha] - 2026-06-22
 
 ### Added
