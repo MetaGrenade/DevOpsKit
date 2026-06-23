@@ -3,11 +3,13 @@ import { ALL_NAV_ITEMS, NAV_GROUPS, type PageId } from "../navigation";
 import { NavIconGlyph, SearchIcon, SunIcon, MoonIcon, MonitorIcon } from "./icons";
 import { Kbd } from "./ui/primitives";
 import { useTheme } from "../hooks/useTheme";
+import { useToast } from "./ui/Toast";
 import type { ThemeMode } from "../lib/theme";
 
 type CommandIcon =
   | { kind: "nav"; icon: Parameters<typeof NavIconGlyph>[0]["icon"] }
-  | { kind: "theme"; mode: ThemeMode };
+  | { kind: "theme"; mode: ThemeMode }
+  | { kind: "search"; type: string };
 
 interface Command {
   id: string;
@@ -16,7 +18,19 @@ interface Command {
   group: string;
   keywords: string[];
   icon: CommandIcon;
-  run: () => void;
+  run: () => void | Promise<void>;
+}
+
+interface SearchApiResult {
+  id: string;
+  type: "module" | "report" | "action" | "docs";
+  label: string;
+  description: string;
+  group: string;
+  page?: string;
+  available?: boolean;
+  actionMethod?: "POST";
+  actionPath?: string;
 }
 
 const GROUP_BY_PAGE = new Map<PageId, string>(
@@ -27,9 +41,12 @@ function CommandGlyph({ icon }: { icon: CommandIcon }) {
   if (icon.kind === "nav") {
     return <NavIconGlyph icon={icon.icon} size="sm" />;
   }
-  if (icon.mode === "light") return <SunIcon size="sm" />;
-  if (icon.mode === "dark") return <MoonIcon size="sm" />;
-  return <MonitorIcon size="sm" />;
+  if (icon.kind === "theme") {
+    if (icon.mode === "light") return <SunIcon size="sm" />;
+    if (icon.mode === "dark") return <MoonIcon size="sm" />;
+    return <MonitorIcon size="sm" />;
+  }
+  return <SearchIcon size="sm" />;
 }
 
 export default function CommandPalette({
@@ -42,12 +59,33 @@ export default function CommandPalette({
   onNavigate: (page: PageId) => void;
 }) {
   const { setMode } = useTheme();
+  const { notify } = useToast();
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<SearchApiResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const commands = useMemo<Command[]>(() => {
+  const runAction = useCallback(
+    async (actionPath: string) => {
+      const response = await fetch(actionPath, { method: "POST" });
+      const payload = (await response.json()) as { message?: string; summary?: Record<string, number> };
+      if (!response.ok) {
+        notify({ title: "Action failed", message: payload.message ?? undefined, tone: "error" });
+        return;
+      }
+      const summaryText = payload.summary
+        ? Object.entries(payload.summary)
+            .slice(0, 3)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(" · ")
+        : undefined;
+      notify({ title: "Action complete", message: summaryText ?? payload.message, tone: "success" });
+    },
+    [notify],
+  );
+
+  const staticCommands = useMemo<Command[]>(() => {
     const navCommands: Command[] = ALL_NAV_ITEMS.map((item) => ({
       id: `nav:${item.id}`,
       label: item.label,
@@ -71,33 +109,87 @@ export default function CommandPalette({
     return [...navCommands, ...themeCommands];
   }, [onNavigate, setMode]);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) {
-      return commands;
+  useEffect(() => {
+    if (!open) {
+      return;
     }
-    return commands.filter((command) =>
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      const params = query.trim() ? `?q=${encodeURIComponent(query.trim())}` : "";
+      fetch(`/api/v1/search${params}`, { signal: controller.signal })
+        .then((response) => (response.ok ? response.json() : { results: [] }))
+        .then((data: { results: SearchApiResult[] }) => setSearchResults(data.results ?? []))
+        .catch(() => {
+          if (!controller.signal.aborted) {
+            setSearchResults([]);
+          }
+        });
+    }, 120);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [open, query]);
+
+  const searchCommands = useMemo<Command[]>(() => {
+    return searchResults.map((result) => {
+      const description =
+        result.type === "report" && result.available === false
+          ? `${result.description} · not generated yet`
+          : result.description;
+
+      return {
+        id: `search:${result.id}`,
+        label: result.label,
+        description,
+        group: result.group,
+        keywords: [result.id, result.type],
+        icon: { kind: "search", type: result.type },
+        run: async () => {
+          if (result.type === "action" && result.actionPath) {
+            await runAction(result.actionPath);
+            return;
+          }
+          if (result.page) {
+            onNavigate(result.page as PageId);
+          }
+        },
+      };
+    });
+  }, [searchResults, onNavigate, runAction]);
+
+  const commands = useMemo(() => {
+    if (!query.trim()) {
+      return staticCommands;
+    }
+    const normalized = query.trim().toLowerCase();
+    const filteredStatic = staticCommands.filter((command) =>
       [command.label, command.description, command.group, ...command.keywords]
         .join(" ")
         .toLowerCase()
         .includes(normalized),
     );
-  }, [commands, query]);
+    const staticIds = new Set(filteredStatic.map((command) => command.id));
+    const extraSearch = searchCommands.filter((command) => !staticIds.has(command.id));
+    return [...filteredStatic, ...extraSearch];
+  }, [staticCommands, searchCommands, query]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Array<{ command: Command; index: number }>>();
-    filtered.forEach((command, index) => {
+    commands.forEach((command, index) => {
       const list = map.get(command.group) ?? [];
       list.push({ command, index });
       map.set(command.group, list);
     });
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [commands]);
 
   useEffect(() => {
     if (open) {
       setQuery("");
       setActiveIndex(0);
+      setSearchResults([]);
       const frame = requestAnimationFrame(() => inputRef.current?.focus());
       return () => cancelAnimationFrame(frame);
     }
@@ -105,12 +197,12 @@ export default function CommandPalette({
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [query]);
+  }, [query, commands.length]);
 
   const runCommand = useCallback(
-    (command: Command | undefined) => {
+    async (command: Command | undefined) => {
       if (!command) return;
-      command.run();
+      await command.run();
       onClose();
     },
     [onClose],
@@ -125,19 +217,19 @@ export default function CommandPalette({
         onClose();
       } else if (event.key === "ArrowDown") {
         event.preventDefault();
-        setActiveIndex((index) => (filtered.length ? (index + 1) % filtered.length : 0));
+        setActiveIndex((index) => (commands.length ? (index + 1) % commands.length : 0));
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
-        setActiveIndex((index) => (filtered.length ? (index - 1 + filtered.length) % filtered.length : 0));
+        setActiveIndex((index) => (commands.length ? (index - 1 + commands.length) % commands.length : 0));
       } else if (event.key === "Enter") {
         event.preventDefault();
-        runCommand(filtered[activeIndex]);
+        void runCommand(commands[activeIndex]);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, filtered, activeIndex, onClose, runCommand]);
+  }, [open, commands, activeIndex, onClose, runCommand]);
 
   useEffect(() => {
     if (!open) return;
@@ -172,7 +264,7 @@ export default function CommandPalette({
             type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search modules and actions…"
+            placeholder="Search modules, reports, and actions…"
             aria-label="Search commands"
             autoComplete="off"
             spellCheck={false}
@@ -180,7 +272,7 @@ export default function CommandPalette({
         </div>
 
         <div className="cmdk-list" ref={listRef}>
-          {filtered.length === 0 ? (
+          {commands.length === 0 ? (
             <p className="cmdk-empty">No results for “{query}”.</p>
           ) : (
             grouped.map(([groupLabel, entries]) => (
@@ -193,7 +285,7 @@ export default function CommandPalette({
                     data-index={index}
                     className={`cmdk-item ${index === activeIndex ? "cmdk-item-active" : ""}`.trim()}
                     onMouseMove={() => setActiveIndex(index)}
-                    onClick={() => runCommand(command)}
+                    onClick={() => void runCommand(command)}
                   >
                     <span className="cmdk-item-icon">
                       <CommandGlyph icon={command.icon} />

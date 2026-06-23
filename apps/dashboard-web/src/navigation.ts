@@ -21,7 +21,8 @@ export type PageId =
   | "maps"
   | "graph"
   | "nui"
-  | "docs";
+  | "docs"
+  | "api-docs";
 
 export type NavIcon =
   | "overview"
@@ -90,6 +91,13 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Guides, module reference, and shortcuts",
         icon: "docs",
         keywords: ["help", "documentation", "guide", "shortcuts", "cli", "manual"],
+      },
+      {
+        id: "api-docs",
+        label: "API Reference",
+        description: "OpenAPI / Swagger documentation for dashboard-api",
+        icon: "docs",
+        keywords: ["openapi", "swagger", "rest", "api", "endpoints"],
       },
     ],
   },

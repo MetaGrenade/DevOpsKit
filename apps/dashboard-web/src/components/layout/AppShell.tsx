@@ -4,6 +4,7 @@ import { findNavItem } from "../../navigation";
 import type { WorkspaceWithConfig } from "../../types/api";
 import { MenuIcon, SearchIcon } from "../icons";
 import ThemeToggle from "../ui/ThemeToggle";
+import NotificationCenter from "../ui/NotificationCenter";
 import { Kbd } from "../ui/primitives";
 import CommandPalette from "../CommandPalette";
 import Sidebar from "./Sidebar";
@@ -141,6 +142,7 @@ export default function AppShell({
               <span className="cmd-trigger-label">Search</span>
               <Kbd>{isMac ? "⌘" : "Ctrl"} K</Kbd>
             </button>
+            <NotificationCenter />
             <ThemeToggle />
           </div>
         </header>

@@ -18,6 +18,9 @@ import { registerGraphRoutes } from "./graph/routes.js";
 import { registerNuiRoutes } from "./nui/routes.js";
 import { registerWorldRoutes } from "./world/routes.js";
 import { registerEnvironmentRoutes } from "./environment/routes.js";
+import { registerOpenApiRoutes } from "./openapi/routes.js";
+import { registerSearchRoutes } from "./search/routes.js";
+import { registerOnboardingRoutes } from "./onboarding/routes.js";
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
@@ -80,6 +83,9 @@ export async function buildApp() {
   await registerStateBagRoutes(app);
   await registerWorldRoutes(app);
   await registerEnvironmentRoutes(app);
+  await registerOpenApiRoutes(app);
+  await registerSearchRoutes(app);
+  await registerOnboardingRoutes(app);
 
   return app;
 }

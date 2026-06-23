@@ -1,6 +1,7 @@
 import type { PageId } from "../navigation";
 import { NAV_GROUPS } from "../navigation";
 import Badge from "../components/ui/Badge";
+import OnboardingChecklist from "../components/OnboardingChecklist";
 import Panel, { PageIntro } from "../components/ui/Panel";
 import { PageStack } from "../components/ui/page";
 
@@ -205,6 +206,8 @@ export default function OverviewPage({
           </Panel>
         </div>
       </section>
+
+      <OnboardingChecklist onNavigate={onNavigate} />
 
       <Panel className="panel-compact">
         <PageIntro

@@ -176,6 +176,15 @@ const ICONS: Record<NavIcon, (props: IconProps) => ReactNode> = {
   ),
 };
 
+export function BellIcon(props: IconProps) {
+  return (
+    <Svg {...props} size={props.size ?? "sm"}>
+      <path d="M12 3a5 5 0 0 0-5 5v2.5L5 13v1h14v-1l-2-2.5V8a5 5 0 0 0-5-5z" />
+      <path d="M10 18a2 2 0 0 0 4 0" />
+    </Svg>
+  );
+}
+
 export function NavIconGlyph({ icon, className = "", size = "sm" }: { icon: NavIcon; className?: string; size?: IconProps["size"] }) {
   const Component = ICONS[icon];
   return <Component className={className} size={size} />;

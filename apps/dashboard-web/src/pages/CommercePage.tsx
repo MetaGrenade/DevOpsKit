@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface ItemOption {
@@ -55,6 +58,7 @@ const EMPTY_RECIPE = {
 };
 
 export default function CommercePage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [tab, setTab] = useState<"shops" | "crafting">("shops");
   const [items, setItems] = useState<ItemOption[]>([]);
@@ -62,12 +66,12 @@ export default function CommercePage() {
   const [recipes, setRecipes] = useState<CraftingRecipe[]>([]);
   const [shopForm, setShopForm] = useState(EMPTY_SHOP);
   const [recipeForm, setRecipeForm] = useState(EMPTY_RECIPE);
-  const [message, setMessage] = useState<string | null>(null);
+  const [shopFilter, setShopFilter] = useState("");
+  const [recipeFilter, setRecipeFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     try {
       const wsRes = await fetch("/api/v1/workspaces/active");
@@ -100,7 +104,11 @@ export default function CommercePage() {
         setRecipes(data.recipes);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
+      notify({
+        title: "Failed to load commerce data",
+        message: error instanceof Error ? error.message : String(error),
+        tone: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -111,27 +119,27 @@ export default function CommercePage() {
   }, []);
 
   async function handleValidate() {
-    setMessage(null);
     const response = await fetch("/api/v1/content/validate", { method: "POST" });
     const payload = (await response.json()) as {
       message?: string;
       report?: { summary: { errors: number; warnings: number; shopsChecked: number; recipesChecked: number } };
     };
     if (!response.ok) {
-      setMessage(payload.message ?? "Validation failed");
+      notify({ title: "Validation failed", message: payload.message ?? undefined, tone: "error" });
       return;
     }
     const summary = payload.report?.summary;
-    setMessage(
-      summary
-        ? `Validation complete: ${summary.errors} errors, ${summary.warnings} warnings (${summary.shopsChecked} shops, ${summary.recipesChecked} recipes)`
-        : "Validation complete",
-    );
+    notify({
+      title: "Validation complete",
+      message: summary
+        ? `${summary.errors} errors · ${summary.warnings} warnings · ${summary.shopsChecked} shops · ${summary.recipesChecked} recipes`
+        : undefined,
+      tone: summary && summary.errors > 0 ? "warning" : "success",
+    });
   }
 
   async function handleSaveShop(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const response = await fetch("/api/v1/content/shops", {
       method: "POST",
@@ -151,18 +159,17 @@ export default function CommercePage() {
 
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to save shop");
+      notify({ title: "Failed to save shop", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
     setShopForm(EMPTY_SHOP);
-    setMessage(`Saved shop ${shopForm.id.trim()}`);
+    notify({ title: `Saved shop ${shopForm.id.trim()}`, tone: "success" });
     await loadData();
   }
 
   async function handleSaveRecipe(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
 
     const response = await fetch("/api/v1/content/crafting", {
       method: "POST",
@@ -171,37 +178,86 @@ export default function CommercePage() {
         id: recipeForm.id.trim(),
         label: recipeForm.label.trim(),
         bench: recipeForm.bench.trim() || undefined,
-        inputs: [
-          {
-            itemId: recipeForm.inputItemId.trim(),
-            amount: Number(recipeForm.inputAmount) || 1,
-          },
-        ],
-        outputs: [
-          {
-            itemId: recipeForm.outputItemId.trim(),
-            amount: Number(recipeForm.outputAmount) || 1,
-          },
-        ],
+        inputs: [{ itemId: recipeForm.inputItemId.trim(), amount: Number(recipeForm.inputAmount) || 1 }],
+        outputs: [{ itemId: recipeForm.outputItemId.trim(), amount: Number(recipeForm.outputAmount) || 1 }],
         metadata: {},
       }),
     });
 
     const payload = (await response.json()) as { message?: string };
     if (!response.ok) {
-      setMessage(payload.message ?? "Failed to save recipe");
+      notify({ title: "Failed to save recipe", message: payload.message ?? undefined, tone: "error" });
       return;
     }
 
     setRecipeForm(EMPTY_RECIPE);
-    setMessage(`Saved recipe ${recipeForm.id.trim()}`);
+    notify({ title: `Saved recipe ${recipeForm.id.trim()}`, tone: "success" });
     await loadData();
   }
+
+  const shopColumns: Array<DataTableColumn<Shop>> = useMemo(
+    () => [
+      {
+        key: "label",
+        header: "Shop",
+        render: (shop) => (
+          <div>
+            <p className="font-medium">{shop.label}</p>
+            <p className="text-xs text-[var(--color-muted)]">{shop.id}</p>
+          </div>
+        ),
+      },
+      { key: "type", header: "Type", render: (shop) => shop.type },
+      { key: "currency", header: "Currency", render: (shop) => shop.currency },
+      { key: "items", header: "Items", align: "right", render: (shop) => shop.items.length },
+    ],
+    [],
+  );
+
+  const recipeColumns: Array<DataTableColumn<CraftingRecipe>> = useMemo(
+    () => [
+      {
+        key: "label",
+        header: "Recipe",
+        render: (recipe) => (
+          <div>
+            <p className="font-medium">{recipe.label}</p>
+            <p className="text-xs text-[var(--color-muted)]">{recipe.id}</p>
+          </div>
+        ),
+      },
+      {
+        key: "inputs",
+        header: "Inputs → Outputs",
+        render: (recipe) =>
+          `${recipe.inputs.map((input) => `${input.amount}x ${input.itemId}`).join(" + ")} → ${recipe.outputs.map((output) => `${output.amount}x ${output.itemId}`).join(", ")}`,
+      },
+    ],
+    [],
+  );
+
+  const filteredShops = useMemo(() => {
+    const normalized = shopFilter.trim().toLowerCase();
+    if (!normalized) return shops;
+    return shops.filter((shop) =>
+      [shop.label, shop.id, shop.type, shop.currency].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [shops, shopFilter]);
+
+  const filteredRecipes = useMemo(() => {
+    const normalized = recipeFilter.trim().toLowerCase();
+    if (!normalized) return recipes;
+    return recipes.filter((recipe) =>
+      [recipe.label, recipe.id, recipe.bench ?? ""].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [recipes, recipeFilter]);
 
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading commerce builders…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -225,8 +281,7 @@ export default function CommercePage() {
           <>
             Author neutral shop inventories and crafting recipes under{" "}
             <code className="inline-code">.fdt/content/shops.json</code> and{" "}
-            <code className="inline-code">.fdt/content/crafting-recipes.json</code>. Validation checks missing item
-            references via <code className="inline-code">fdt content validate</code>.
+            <code className="inline-code">.fdt/content/crafting-recipes.json</code>.
           </>
         }
         actions={
@@ -235,8 +290,6 @@ export default function CommercePage() {
           </button>
         }
       />
-
-      {message && <PageAlert>{message}</PageAlert>}
 
       <Panel className="panel-compact">
         <div className="tab-row">
@@ -260,29 +313,15 @@ export default function CommercePage() {
             <form className="form-stack panel-section" onSubmit={handleSaveShop}>
               <label className="form-field">
                 <span className="form-label">Shop id</span>
-                <input
-                  required
-                  value={shopForm.id}
-                  onChange={(e) => setShopForm({ ...shopForm, id: e.target.value })}
-                  className="form-control"
-                />
+                <input required value={shopForm.id} onChange={(e) => setShopForm({ ...shopForm, id: e.target.value })} className="form-control" />
               </label>
               <label className="form-field">
                 <span className="form-label">Label</span>
-                <input
-                  required
-                  value={shopForm.label}
-                  onChange={(e) => setShopForm({ ...shopForm, label: e.target.value })}
-                  className="form-control"
-                />
+                <input required value={shopForm.label} onChange={(e) => setShopForm({ ...shopForm, label: e.target.value })} className="form-control" />
               </label>
               <label className="form-field">
                 <span className="form-label">Starter item</span>
-                <select
-                  value={shopForm.itemId}
-                  onChange={(e) => setShopForm({ ...shopForm, itemId: e.target.value })}
-                  className="form-control"
-                >
+                <select value={shopForm.itemId} onChange={(e) => setShopForm({ ...shopForm, itemId: e.target.value })} className="form-control">
                   <option value="">None</option>
                   {items.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -293,11 +332,7 @@ export default function CommercePage() {
               </label>
               <label className="form-field">
                 <span className="form-label">Price</span>
-                <input
-                  value={shopForm.itemPrice}
-                  onChange={(e) => setShopForm({ ...shopForm, itemPrice: e.target.value })}
-                  className="form-control"
-                />
+                <input value={shopForm.itemPrice} onChange={(e) => setShopForm({ ...shopForm, itemPrice: e.target.value })} className="form-control" />
               </label>
               <button type="submit" className="btn btn-accent btn-sm">
                 Save shop
@@ -306,28 +341,18 @@ export default function CommercePage() {
           </Panel>
 
           <Panel className="panel-compact">
-            <h3 className="panel-heading">Shops ({shops.length})</h3>
-            <div className="panel-section space-y-3">
-              {shops.length === 0 ? (
-                <p className="panel-subtext">No shops yet.</p>
-              ) : (
-                shops.map((shop) => (
-                  <article key={shop.id} className="finding-card text-sm">
-                    <div className="font-medium">{shop.label}</div>
-                    <div className="text-xs text-[var(--color-muted)]">
-                      {shop.id} · {shop.type} · {shop.currency}
-                    </div>
-                    <ul className="list-plain mt-2 text-[var(--color-muted)]">
-                      {shop.items.map((entry) => (
-                        <li key={`${shop.id}-${entry.itemId}`}>
-                          {entry.itemId} — ${entry.price}
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))
-              )}
-            </div>
+            <h3 className="panel-heading">Shops</h3>
+            {shops.length === 0 ? (
+              <p className="panel-subtext panel-section">No shops yet.</p>
+            ) : (
+              <div className="panel-section">
+                <Toolbar
+                  search={{ value: shopFilter, onChange: setShopFilter, placeholder: "Filter shops…", ariaLabel: "Filter shops" }}
+                  count={`${filteredShops.length} of ${shops.length}`}
+                />
+                <DataTable columns={shopColumns} rows={filteredShops} getRowKey={(shop) => shop.id} emptyMessage="No shops match your filter." />
+              </div>
+            )}
           </Panel>
         </div>
       ) : (
@@ -337,30 +362,15 @@ export default function CommercePage() {
             <form className="form-stack panel-section" onSubmit={handleSaveRecipe}>
               <label className="form-field">
                 <span className="form-label">Recipe id</span>
-                <input
-                  required
-                  value={recipeForm.id}
-                  onChange={(e) => setRecipeForm({ ...recipeForm, id: e.target.value })}
-                  className="form-control"
-                />
+                <input required value={recipeForm.id} onChange={(e) => setRecipeForm({ ...recipeForm, id: e.target.value })} className="form-control" />
               </label>
               <label className="form-field">
                 <span className="form-label">Label</span>
-                <input
-                  required
-                  value={recipeForm.label}
-                  onChange={(e) => setRecipeForm({ ...recipeForm, label: e.target.value })}
-                  className="form-control"
-                />
+                <input required value={recipeForm.label} onChange={(e) => setRecipeForm({ ...recipeForm, label: e.target.value })} className="form-control" />
               </label>
               <label className="form-field">
                 <span className="form-label">Input item</span>
-                <select
-                  required
-                  value={recipeForm.inputItemId}
-                  onChange={(e) => setRecipeForm({ ...recipeForm, inputItemId: e.target.value })}
-                  className="form-control"
-                >
+                <select required value={recipeForm.inputItemId} onChange={(e) => setRecipeForm({ ...recipeForm, inputItemId: e.target.value })} className="form-control">
                   <option value="">Select…</option>
                   {items.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -371,12 +381,7 @@ export default function CommercePage() {
               </label>
               <label className="form-field">
                 <span className="form-label">Output item</span>
-                <select
-                  required
-                  value={recipeForm.outputItemId}
-                  onChange={(e) => setRecipeForm({ ...recipeForm, outputItemId: e.target.value })}
-                  className="form-control"
-                >
+                <select required value={recipeForm.outputItemId} onChange={(e) => setRecipeForm({ ...recipeForm, outputItemId: e.target.value })} className="form-control">
                   <option value="">Select…</option>
                   {items.map((item) => (
                     <option key={item.id} value={item.id}>
@@ -392,23 +397,18 @@ export default function CommercePage() {
           </Panel>
 
           <Panel className="panel-compact">
-            <h3 className="panel-heading">Recipes ({recipes.length})</h3>
-            <div className="panel-section space-y-3">
-              {recipes.length === 0 ? (
-                <p className="panel-subtext">No crafting recipes yet.</p>
-              ) : (
-                recipes.map((recipe) => (
-                  <article key={recipe.id} className="finding-card text-sm">
-                    <div className="font-medium">{recipe.label}</div>
-                    <div className="text-xs text-[var(--color-muted)]">{recipe.id}</div>
-                    <p className="mt-2 text-[var(--color-muted)]">
-                      {recipe.inputs.map((input) => `${input.amount}x ${input.itemId}`).join(" + ")} →{" "}
-                      {recipe.outputs.map((output) => `${output.amount}x ${output.itemId}`).join(", ")}
-                    </p>
-                  </article>
-                ))
-              )}
-            </div>
+            <h3 className="panel-heading">Recipes</h3>
+            {recipes.length === 0 ? (
+              <p className="panel-subtext panel-section">No crafting recipes yet.</p>
+            ) : (
+              <div className="panel-section">
+                <Toolbar
+                  search={{ value: recipeFilter, onChange: setRecipeFilter, placeholder: "Filter recipes…", ariaLabel: "Filter recipes" }}
+                  count={`${filteredRecipes.length} of ${recipes.length}`}
+                />
+                <DataTable columns={recipeColumns} rows={filteredRecipes} getRowKey={(recipe) => recipe.id} emptyMessage="No recipes match your filter." />
+              </div>
+            )}
           </Panel>
         </div>
       )}

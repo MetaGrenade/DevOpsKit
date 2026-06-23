@@ -19,10 +19,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - New UI primitives — `Kbd`, `Tooltip`, `Skeleton` / `SkeletonText`, and `SegmentedControl`.
 - Design system v2 tokens — elevation ramp (`--surface-1..3`), accent ramp, motion/easing tokens, focus-visible ring system, and a max-width content container.
 - Reusable **`DataTable`** primitive with dependency-free row virtualization (windowing) and a sticky header for large datasets, plus a **`Toolbar`** primitive with built-in filter search and result counts.
-- Filterable (and virtualized where large) tables across **Resources**, **Assets** (size ranking), **Items** (registry), **Performance** (metric changes), and **Zones** (registry).
+- Filterable (and virtualized where large) tables across **Resources**, **Assets** (size ranking), **Items** (registry), **Performance** (metric changes), **Zones** (registry), **Commerce**, **Economy**, and **Domains** (vehicles).
+- **OpenAPI / Swagger** API documentation — `GET /api/v1/openapi.json`, interactive docs at `/api/v1/docs`, and an in-app **API Reference** page.
+- **Global search** — `GET /api/v1/search` catalog (modules, reports, quick actions) integrated into the command palette.
+- **Onboarding checklist** on Overview — `GET /api/v1/onboarding/status` drives a progress ring with deep links to each step.
+- **Notification center** — bell icon in the top bar with toast history, unread count, mark-all-read, and clear.
+- **Playwright e2e** — shell smoke tests and light/dark overview snapshots (`test:e2e` script).
 
 ### Changed
 
+- **Commerce**, **Economy**, and **Domains** (vehicles tab) — migrated to `DataTable`/`Toolbar` with toasts and skeleton loaders.
+- **Docs & Help** — new API reference section linking to the in-app Swagger viewer.
 - Page loader now renders skeleton placeholders instead of a spinner for better perceived performance.
 - Data-dense pages — **Resources**, **Releases**, **QA**, **Assets**, **Items**, **Performance**, **Zones**, and **Domains** — now surface action results through the toast system and show skeleton loaders while data loads (replacing inline banners and "Loading…" text).
 - Dashboard typography — **Plus Jakarta Sans** (UI), **Outfit** (headings), and **JetBrains Mono** (code); unified type scale, label tracking, and heading letter-spacing.
@@ -36,7 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- **Releases** page — missing closing wrapper after validation stats (build-breaking JSX).
+- **Onboarding status** — reads the workspace registry directly instead of auto-registering the sample workspace, so the checklist reflects whether a user has actually selected a workspace.
 - **Vehicles** page — unused imports after theme migration.
 
 ## [0.0.1-alpha] - 2026-06-22

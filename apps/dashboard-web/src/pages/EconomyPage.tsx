@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
-  PageAlert,
   PageIntro,
   PageStack,
   Panel,
   StatGrid,
   StatTile,
 } from "../components/ui/page";
+import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
+import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
 interface EconomyReport {
@@ -35,16 +38,16 @@ interface EconomyReport {
 }
 
 export default function EconomyPage() {
+  const { notify } = useToast();
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceWithConfig | null>(null);
   const [report, setReport] = useState<EconomyReport | null>(null);
   const [hours, setHours] = useState("4");
-  const [message, setMessage] = useState<string | null>(null);
+  const [activityFilter, setActivityFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
   async function loadData() {
     setLoading(true);
-    setMessage(null);
 
     const wsRes = await fetch("/api/v1/workspaces/active");
     if (wsRes.status === 404) {
@@ -53,7 +56,7 @@ export default function EconomyPage() {
       return;
     }
     if (!wsRes.ok) {
-      setMessage("Failed to load active workspace");
+      notify({ title: "Failed to load active workspace", tone: "error" });
       setLoading(false);
       return;
     }
@@ -75,7 +78,6 @@ export default function EconomyPage() {
 
   async function runSimulation() {
     setBusy(true);
-    setMessage(null);
     const parsedHours = Number(hours);
     const response = await fetch("/api/v1/economy/simulate", {
       method: "POST",
@@ -84,19 +86,80 @@ export default function EconomyPage() {
     });
     const payload = (await response.json()) as { message?: string; report?: EconomyReport };
     if (!response.ok) {
-      setMessage(payload.message ?? "Economy simulation failed");
+      notify({ title: "Economy simulation failed", message: payload.message ?? undefined, tone: "error" });
       setBusy(false);
       return;
     }
     setReport(payload.report ?? null);
-    setMessage("Economy simulation complete");
+    notify({
+      title: "Economy simulation complete",
+      message: payload.report
+        ? `${payload.report.summary.comparedActivities} activities · ${payload.report.summary.inflationRisk} inflation risk`
+        : undefined,
+      tone: "success",
+    });
     setBusy(false);
   }
+
+  const activityColumns: Array<DataTableColumn<EconomyReport["activities"][number]>> = useMemo(
+    () => [
+      { key: "label", header: "Activity", className: "font-medium", render: (row) => row.label },
+      { key: "category", header: "Category", render: (row) => row.category },
+      {
+        key: "netPerHour",
+        header: "Net/hr",
+        align: "right",
+        render: (row) => `$${row.netPerHour.toFixed(0)}`,
+      },
+      {
+        key: "netForSession",
+        header: "Net/session",
+        align: "right",
+        render: (row) => `$${row.netForSession.toFixed(0)}`,
+      },
+    ],
+    [],
+  );
+
+  const affordabilityColumns: Array<DataTableColumn<EconomyReport["affordability"][number]>> = useMemo(
+    () => [
+      { key: "displayName", header: "Vehicle", className: "font-medium", render: (row) => row.displayName },
+      {
+        key: "price",
+        header: "Price",
+        align: "right",
+        render: (row) => `$${row.price.toLocaleString()}`,
+      },
+      {
+        key: "hoursAtMedianIncome",
+        header: "Hours at median",
+        align: "right",
+        render: (row) =>
+          Number.isFinite(row.hoursAtMedianIncome) ? `${row.hoursAtMedianIncome}h` : "n/a",
+      },
+    ],
+    [],
+  );
+
+  const filteredActivities = useMemo(() => {
+    if (!report) {
+      return [];
+    }
+    const normalized = activityFilter.trim().toLowerCase();
+    if (!normalized) {
+      return report.activities;
+    }
+    return report.activities.filter((activity) =>
+      [activity.label, activity.category].join(" ").toLowerCase().includes(normalized),
+    );
+  }, [report, activityFilter]);
 
   if (loading) {
     return (
       <PageStack>
-        <p className="panel-subtext">Loading economy simulator…</p>
+        <Panel className="panel-compact">
+          <SkeletonText lines={6} />
+        </Panel>
       </PageStack>
     );
   }
@@ -146,7 +209,6 @@ export default function EconomyPage() {
           CLI: <code className="inline-code">fdt economy simulate --hours 4</code> ·{" "}
           <code className="inline-code">fdt economy report</code>
         </p>
-        {message && <PageAlert>{message}</PageAlert>}
       </Panel>
 
       {report && (
@@ -176,34 +238,34 @@ export default function EconomyPage() {
 
           <Panel className="panel-compact">
             <h3 className="panel-heading">Income activities</h3>
-            <div className="panel-section space-y-2">
-              {report.activities.slice(0, 12).map((activity) => (
-                <article key={activity.label} className="finding-card text-sm">
-                  <div className="font-medium">{activity.label}</div>
-                  <div className="text-xs text-[var(--color-muted)]">
-                    {activity.category} · ${activity.netPerHour.toFixed(0)}/hr · $
-                    {activity.netForSession.toFixed(0)}/session
-                  </div>
-                </article>
-              ))}
+            <div className="panel-section">
+              <Toolbar
+                search={{
+                  value: activityFilter,
+                  onChange: setActivityFilter,
+                  placeholder: "Filter activities…",
+                  ariaLabel: "Filter income activities",
+                }}
+                count={`${filteredActivities.length} of ${report.activities.length}`}
+              />
+              <DataTable
+                columns={activityColumns}
+                rows={filteredActivities}
+                getRowKey={(row) => `${row.label}-${row.category}`}
+                emptyMessage="No activities match your filter."
+              />
             </div>
           </Panel>
 
           {report.affordability.length > 0 && (
             <Panel className="panel-compact">
               <h3 className="panel-heading">Vehicle affordability</h3>
-              <div className="panel-section space-y-2">
-                {report.affordability.slice(0, 8).map((entry) => (
-                  <article key={entry.displayName} className="finding-card text-sm">
-                    <div className="font-medium">{entry.displayName}</div>
-                    <div className="text-xs text-[var(--color-muted)]">
-                      ${entry.price.toLocaleString()} ·{" "}
-                      {Number.isFinite(entry.hoursAtMedianIncome)
-                        ? `${entry.hoursAtMedianIncome}h at median income`
-                        : "n/a"}
-                    </div>
-                  </article>
-                ))}
+              <div className="panel-section">
+                <DataTable
+                  columns={affordabilityColumns}
+                  rows={report.affordability}
+                  getRowKey={(row) => row.displayName}
+                />
               </div>
             </Panel>
           )}

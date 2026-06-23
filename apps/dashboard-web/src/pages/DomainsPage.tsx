@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   EmptyState,
   PageIntro,
@@ -6,6 +6,8 @@ import {
   Panel,
 } from "../components/ui/page";
 import { SkeletonText } from "../components/ui/primitives";
+import DataTable, { type DataTableColumn } from "../components/ui/DataTable";
+import Toolbar from "../components/ui/Toolbar";
 import { useToast } from "../components/ui/Toast";
 import type { WorkspaceWithConfig } from "../types/api";
 
@@ -96,6 +98,7 @@ export default function DomainsPage() {
   const [mapForm, setMapForm] = useState(EMPTY_MAP);
   const [selectedZoneId, setSelectedZoneId] = useState("");
   const [exportPreview, setExportPreview] = useState<ExportFile[] | null>(null);
+  const [vehicleFilter, setVehicleFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   async function loadData() {
@@ -282,7 +285,44 @@ export default function DomainsPage() {
 
     const payload = (await response.json()) as { files: ExportFile[] };
     setExportPreview(payload.files);
+    notify({ title: "Export preview ready", message: `${payload.files.length} file(s)`, tone: "success" });
   }
+
+  const vehicleColumns: Array<DataTableColumn<Vehicle>> = useMemo(
+    () => [
+      {
+        key: "displayName",
+        header: "Vehicle",
+        render: (vehicle) => (
+          <div>
+            <p className="font-medium">{vehicle.displayName}</p>
+            <p className="text-xs text-[var(--color-muted)]">{vehicle.spawnName}</p>
+          </div>
+        ),
+      },
+      { key: "category", header: "Category", render: (vehicle) => vehicle.category },
+      {
+        key: "price",
+        header: "Price",
+        align: "right",
+        render: (vehicle) => (vehicle.price !== undefined ? `$${vehicle.price}` : "—"),
+      },
+    ],
+    [],
+  );
+
+  const filteredVehicles = useMemo(() => {
+    const normalized = vehicleFilter.trim().toLowerCase();
+    if (!normalized) {
+      return vehicles;
+    }
+    return vehicles.filter((vehicle) =>
+      [vehicle.displayName, vehicle.spawnName, vehicle.category, vehicle.shop ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalized),
+    );
+  }, [vehicles, vehicleFilter]);
 
   if (loading) {
     return (
@@ -373,17 +413,28 @@ export default function DomainsPage() {
             </form>
           </Panel>
           <Panel className="panel-compact">
-            <h3 className="panel-heading">Vehicle Registry ({vehicles.length})</h3>
-            <div className="panel-section space-y-2">
-              {vehicles.map((vehicle) => (
-                <article key={vehicle.spawnName} className="finding-card text-sm">
-                  <div className="font-medium">{vehicle.displayName}</div>
-                  <div className="text-xs text-[var(--color-muted)]">
-                    {vehicle.spawnName} · {vehicle.category}
-                  </div>
-                </article>
-              ))}
-            </div>
+            <h3 className="panel-heading">Vehicle Registry</h3>
+            {vehicles.length === 0 ? (
+              <p className="panel-subtext panel-section">No vehicles yet.</p>
+            ) : (
+              <div className="panel-section">
+                <Toolbar
+                  search={{
+                    value: vehicleFilter,
+                    onChange: setVehicleFilter,
+                    placeholder: "Filter vehicles…",
+                    ariaLabel: "Filter vehicle registry",
+                  }}
+                  count={`${filteredVehicles.length} of ${vehicles.length}`}
+                />
+                <DataTable
+                  columns={vehicleColumns}
+                  rows={filteredVehicles}
+                  getRowKey={(vehicle) => vehicle.spawnName}
+                  emptyMessage="No vehicles match your filter."
+                />
+              </div>
+            )}
           </Panel>
         </div>
       )}

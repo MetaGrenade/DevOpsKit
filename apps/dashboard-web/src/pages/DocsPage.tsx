@@ -11,6 +11,7 @@ const SECTIONS = [
   { id: "getting-started", label: "Getting started" },
   { id: "workflow", label: "Daily workflow" },
   { id: "modules", label: "Module reference" },
+  { id: "api", label: "API reference" },
   { id: "shortcuts", label: "Keyboard shortcuts" },
   { id: "cli", label: "CLI cheatsheet" },
 ] as const;
@@ -136,6 +137,31 @@ export default function DocsPage({ onNavigate }: DocsPageProps) {
                     </div>
                   </div>
                 ))}
+              </div>
+            </Panel>
+          </section>
+
+          <section id="api" className="docs-section">
+            <Panel className="panel-compact">
+              <h2 className="panel-heading">API reference</h2>
+              <p className="panel-subtext">
+                The dashboard web UI talks to <code className="inline-code">dashboard-api</code> over REST.
+                Browse the OpenAPI spec and Swagger UI for every endpoint, request shape, and response.
+              </p>
+              <div className="panel-section">
+                <button
+                  type="button"
+                  className="btn btn-accent btn-sm"
+                  onClick={() => onNavigate?.("api-docs")}
+                  disabled={!onNavigate}
+                >
+                  Open API Reference
+                </button>
+                {!onNavigate && (
+                  <p className="mt-2 text-xs text-[var(--color-muted)]">
+                    Select <strong>API Reference</strong> from the Start group in the sidebar.
+                  </p>
+                )}
               </div>
             </Panel>
           </section>
